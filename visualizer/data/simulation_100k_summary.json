@@ -1,0 +1,131 @@
+{
+  "n_games": 100000,
+  "total_time_seconds": 144.96218061447144,
+  "banker_win_rate": 45.877,
+  "intern_win_rate": 54.123,
+  "avg_rounds": 5.68731,
+  "score_distribution": {
+    "3 x 4": 23986,
+    "4 x 0": 14061,
+    "1 x 4": 14726,
+    "4 x 1": 16204,
+    "4 x 2": 11779,
+    "2 x 4": 15393,
+    "4 x 3": 3833,
+    "0 x 4": 18
+  },
+  "tier_funnel": {
+    "1": {
+      "played": 100000,
+      "success": 83392,
+      "intern_in": 52142,
+      "sab_in": 30835,
+      "fail_insumo": 9570,
+      "fail_valor": 7038,
+      "fail_toxico": 0,
+      "tokens_spent": 0
+    },
+    "2": {
+      "played": 100000,
+      "success": 63367,
+      "intern_in": 57296,
+      "sab_in": 34157,
+      "fail_insumo": 12551,
+      "fail_valor": 24082,
+      "fail_toxico": 0,
+      "tokens_spent": 44630
+    },
+    "3": {
+      "played": 100000,
+      "success": 45991,
+      "intern_in": 80975,
+      "sab_in": 56261,
+      "fail_insumo": 39274,
+      "fail_valor": 9977,
+      "fail_toxico": 4758,
+      "tokens_spent": 49609
+    },
+    "4": {
+      "played": 100000,
+      "success": 43965,
+      "intern_in": 74576,
+      "sab_in": 49428,
+      "fail_insumo": 46547,
+      "fail_valor": 1340,
+      "fail_toxico": 8148,
+      "tokens_spent": 91838
+    },
+    "5": {
+      "played": 85921,
+      "success": 40480,
+      "intern_in": 78229,
+      "sab_in": 53812,
+      "fail_insumo": 38873,
+      "fail_valor": 1614,
+      "fail_toxico": 4954,
+      "tokens_spent": 271871
+    },
+    "6": {
+      "played": 54991,
+      "success": 19950,
+      "intern_in": 41553,
+      "sab_in": 27506,
+      "fail_insumo": 27824,
+      "fail_valor": 3429,
+      "fail_toxico": 3788,
+      "tokens_spent": 28377
+    },
+    "7": {
+      "played": 27819,
+      "success": 3833,
+      "intern_in": 23081,
+      "sab_in": 18495,
+      "fail_insumo": 13660,
+      "fail_valor": 6017,
+      "fail_toxico": 4309,
+      "tokens_spent": 20841
+    }
+  },
+  "governance": {
+    "avg_vetoes": 4.36271,
+    "games_with_forced": 65600,
+    "r5_expansion_count": 72542
+  },
+  "economy": {
+    "avg_tokens_spent": 5.07166,
+    "avg_hand_end": 3.539907999999999,
+    "total_toxic_played": 57267
+  },
+  "deduction": {
+    "lockout_count": 299,
+    "avg_unmasked": 0.7201,
+    "avg_intern_sus": 0.67621365,
+    "avg_banker_sus": 0.44402148
+  },
+  "by_profile": {
+    "A (Agressivo / Blefe Imediato)": {
+      "wr_interns": 64.51739078108075,
+      "wr_bankers": 35.482609218919244,
+      "avg_rounds": 5.774491515224455,
+      "lockout_pct": 0.0,
+      "avg_unmasked": 0.8141473101456252,
+      "top_score": "3 x 4"
+    },
+    "B (Infiltracao Profunda / Sleeper)": {
+      "wr_interns": 52.18531208103679,
+      "wr_bankers": 47.81468791896321,
+      "avg_rounds": 5.706509757187547,
+      "lockout_pct": 0.7865335915388053,
+      "avg_unmasked": 0.6836585729182184,
+      "top_score": "3 x 4"
+    },
+    "C (Hedge / Retencao Economica)": {
+      "wr_interns": 45.67607458055966,
+      "wr_bankers": 54.32392541944034,
+      "avg_rounds": 5.580619898189704,
+      "lockout_pct": 0.10542486219464442,
+      "avg_unmasked": 0.6627910479231303,
+      "top_score": "3 x 4"
+    }
+  }
+}
