@@ -24,6 +24,8 @@ def main():
     parser.add_argument("--sim", type=int, default=None, help="Executar simulação Monte Carlo com N partidas")
     parser.add_argument("--workers", "-w", type=int, default=None, help="Número de workers paralelos para simulação")
     parser.add_argument("--export", "-e", type=str, default=None, help="Caminho para exportar relatório estatístico em JSON")
+    parser.add_argument("--banker-profile", "-bp", type=str, default=None, help="Perfil dos banqueiros (ex: BALANCED, CONSERVATIVE, PRAGMATIC, STRATEGIST, mixed, all)")
+    parser.add_argument("--intern-profile", "-ip", type=str, default=None, help="Perfil dos estagiários (ex: A_AGGRESSIVE, B_SLEEPER, C_HEDGE, D_OPPORTUNIST, E_TECHNICIAN, mixed, all)")
     parser.add_argument("--benchmark", action="store_true", help="Executar benchmark comparativo dos perfis")
     parser.add_argument("--dashboard", action="store_true", help="Gerar traces e atualizar visualizador HTML")
     parser.add_argument("--all", action="store_true", help="Executar simulação, benchmark e atualizar dashboard")
@@ -40,17 +42,29 @@ def main():
         return
 
     if args.all:
-        run_monte_carlo(50000, num_workers=args.workers, export_json=args.export)
-        benchmark_profiles(10000)
+        run_monte_carlo(
+            50000,
+            num_workers=args.workers,
+            export_json=args.export,
+            banker_profile=args.banker_profile,
+            intern_profile=args.intern_profile
+        )
+        benchmark_profiles(2000, matrix_sample=500)
         generate_trace_dataset("visualizer/data/game_traces.json")
         generate_dashboard()
         return
 
     if args.sim is not None:
-        run_monte_carlo(args.sim, num_workers=args.workers, export_json=args.export)
+        run_monte_carlo(
+            args.sim,
+            num_workers=args.workers,
+            export_json=args.export,
+            banker_profile=args.banker_profile,
+            intern_profile=args.intern_profile
+        )
 
     if args.benchmark:
-        benchmark_profiles(10000)
+        benchmark_profiles(2000, matrix_sample=500)
 
     if args.dashboard:
         print("Gerando Traces e Visualizador...")

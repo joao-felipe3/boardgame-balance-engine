@@ -7,9 +7,9 @@ import random
 import time
 import itertools
 import numpy as np
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Union
 
-from .constants import CardType, Role, InternProfile, ContractSpec, SEVEN_TIERS_CATALOG
+from .constants import CardType, Role, InternProfile, BankerProfile, ContractSpec, SEVEN_TIERS_CATALOG
 from .deck import ResourceCard, DeckManager
 from .player import PlayerAI, PlayerDeclaration
 
@@ -94,15 +94,45 @@ def choose_optimal_committee(
             'total_declared': total_declared
         })
 
-    evaluated_comms.sort(key=lambda x: (
-        not x['has_req_coverage'],  # 1º: cobertura do insumo obrigatória
-        not x['is_viable'],         # 2º: viabilidade de liquidez total declarada
-        x['conflict_penalty'],      # 3º: em comitê de 2, prefere testar jogadores fora do par de conflito
-        round(x['avg_sus'], 2),     # 4º: menor suspeita média entre os membros
-        x['bench_count'],           # 5º: evitar membros que preferem o banco
-        not x['has_chair'],         # 6º: preferência por incluir o Chairman
-        -x['total_declared']        # 7º: maior valor total declarado como desempate
-    ))
+    if getattr(chair, 'profile', None) == BankerProfile.CONSERVATIVE:
+        evaluated_comms.sort(key=lambda x: (
+            not x['has_req_coverage'],
+            not x['is_viable'],
+            x['conflict_penalty'],
+            round(x['avg_sus'], 2),
+            not x['has_chair'],
+            x['bench_count'],
+            -x['total_declared']
+        ))
+    elif getattr(chair, 'profile', None) == BankerProfile.PRAGMATIC:
+        evaluated_comms.sort(key=lambda x: (
+            not x['has_req_coverage'],
+            not x['is_viable'],
+            -x['total_declared'],
+            round(x['avg_sus'], 2),
+            x['conflict_penalty'],
+            x['bench_count'],
+            not x['has_chair']
+        ))
+    elif getattr(chair, 'profile', None) == BankerProfile.STRATEGIST:
+        evaluated_comms.sort(key=lambda x: (
+            not x['has_req_coverage'],
+            not x['is_viable'],
+            round(x['avg_sus'], 2),
+            x['bench_count'],
+            not x['has_chair'],
+            -x['total_declared']
+        ))
+    else:
+        evaluated_comms.sort(key=lambda x: (
+            not x['has_req_coverage'],  # 1º: cobertura do insumo obrigatória
+            not x['is_viable'],         # 2º: viabilidade de liquidez total declarada
+            x['conflict_penalty'],      # 3º: em comitê de 2, prefere testar jogadores fora do par de conflito
+            round(x['avg_sus'], 2),     # 4º: menor suspeita média entre os membros
+            x['bench_count'],           # 5º: evitar membros que preferem o banco
+            not x['has_chair'],         # 6º: preferência por incluir o Chairman
+            -x['total_declared']        # 7º: maior valor total declarado como desempate
+        ))
 
     best = evaluated_comms[0]
     return best['comm'], best['supplier_ids']
@@ -186,6 +216,24 @@ def coordinate_committee_contributions(
                 # Sabotagem geral: rodada 4+ (antecipado de 5)
                 late_sabotage = round_num >= 4
                 should_sabotage = toxic_sabotage or quota_denial or late_sabotage
+            elif p.profile == InternProfile.D_OPPORTUNIST:
+                if banker_score >= 2:
+                    # Banco ameaça fechar o jogo: sabotagem agressiva
+                    should_sabotage = True
+                elif intern_score >= 2 and round_num <= 4:
+                    # Estagiários já liderando: joga camuflado para ganhar créditos e despistar
+                    should_sabotage = False
+                elif round_num >= 3:
+                    should_sabotage = True
+                else:
+                    # R1 honesto, R2 desperta se 1x0
+                    should_sabotage = (round_num == 2 and banker_score >= 1 and p.rng.random() < 0.40)
+            elif p.profile == InternProfile.E_TECHNICIAN:
+                # Técnico: joga cooperativo nas primeiras rodadas para acumular cartas/créditos e ataca a partir da R3
+                if round_num <= 2:
+                    should_sabotage = False
+                else:
+                    should_sabotage = True
 
         honest_cards, honest_tokens, honest_val = p.plan_honest_contribution(contract, round_num, is_req_responsible, quota_for_p, is_match_point=is_match_point)
         cumulative_committed_val += honest_val
@@ -223,26 +271,51 @@ def coordinate_committee_contributions(
 
 def simulate_single_match(
     game_idx: int,
-    profile: InternProfile,
+    profile: Optional[InternProfile] = None,
     seed: Optional[int] = None,
-    record_trace: bool = False
+    record_trace: bool = False,
+    banker_profile: Union[BankerProfile, str] = BankerProfile.BALANCED,
+    intern_profile: Optional[Union[InternProfile, str]] = None
 ) -> Dict:
-    """Executa uma partida completa de BTG Madagascar v14.0."""
+    """Executa uma partida completa de BTG Madagascar v14.0 com suporte a múltiplos perfis."""
     rng = random.Random(seed if seed is not None else (int(time.time() * 1000) ^ game_idx))
     
     roles = [Role.BANKER] * 3 + [Role.INTERN] * 2
     rng.shuffle(roles)
 
+    if intern_profile is None:
+        intern_profile = profile if profile is not None else InternProfile.B_SLEEPER
+
+    all_banker_profs = list(BankerProfile)
+    all_intern_profs = list(InternProfile)
+
     intern_count = 0
     players = []
     for i in range(5):
-        is_active = False
         if roles[i] == Role.INTERN:
             is_active = (intern_count == 0)
             intern_count += 1
-        players.append(PlayerAI(i, roles[i], profile, rng, is_active_saboteur=is_active))
+            if intern_profile == "MIXED":
+                p_prof = rng.choice(all_intern_profs)
+            elif isinstance(intern_profile, InternProfile):
+                p_prof = intern_profile
+            elif isinstance(intern_profile, str) and intern_profile in InternProfile.__members__:
+                p_prof = InternProfile[intern_profile]
+            else:
+                p_prof = InternProfile.B_SLEEPER
+            players.append(PlayerAI(i, roles[i], p_prof, rng, is_active_saboteur=is_active))
+        else:
+            if banker_profile == "MIXED":
+                b_prof = rng.choice(all_banker_profs)
+            elif isinstance(banker_profile, BankerProfile):
+                b_prof = banker_profile
+            elif isinstance(banker_profile, str) and banker_profile in BankerProfile.__members__:
+                b_prof = BankerProfile[banker_profile]
+            else:
+                b_prof = BankerProfile.BALANCED
+            players.append(PlayerAI(i, roles[i], b_prof, rng, is_active_saboteur=False))
 
-    players_metadata = [{'id': p.id, 'role': p.role.value} for p in players]
+    players_metadata = [{'id': p.id, 'role': p.role.value, 'profile': p.profile.value} for p in players]
 
     deck = DeckManager(seed=rng.randint(0, 10**9))
     deck.refill_open_market(3)
@@ -419,8 +492,12 @@ def simulate_single_match(
             else:
                 promised_supplier = None
 
-        for pid in approved_committee:
-            has_played[pid] = True
+        for p in players:
+            if p.id in approved_committee:
+                has_played[p.id] = True
+                p.consecutive_rounds += 1
+            else:
+                p.consecutive_rounds = 0
 
         # Dividendo de Banco Completo Oficial (+1 Carta E +1 Token de Juros):
         for p in players:
@@ -428,10 +505,17 @@ def simulate_single_match(
                 p.accumulate_holding_interest()
                 if p.role == Role.BANKER:
                     preferred = None
-                    for ct in [contract.req_commodity, CardType.WILD, CardType.SF, CardType.TI]:
-                        if ct is not None and ct in deck.open_market:
-                            preferred = ct
-                            break
+                    if getattr(p, 'profile', None) == BankerProfile.STRATEGIST:
+                        # Estrategista foca em Safira e Wild, depois insumo do contrato e Titânio
+                        for ct in [CardType.SF, CardType.WILD, contract.req_commodity, CardType.TI]:
+                            if ct is not None and ct in deck.open_market:
+                                preferred = ct
+                                break
+                    else:
+                        for ct in [contract.req_commodity, CardType.WILD, CardType.SF, CardType.TI]:
+                            if ct is not None and ct in deck.open_market:
+                                preferred = ct
+                                break
                     if preferred:
                         c = deck.draw_from_market(preferred)
                         p.public_known_cards.append(preferred)
@@ -646,13 +730,21 @@ def simulate_single_match(
             avg_bnk_s = float(np.mean(bnk_sus)) if bnk_sus else 0.0
             avg_hand = float(np.mean([len(p.hand) for p in players]))
 
+            i_prof_names = [ip.profile.value for ip in interns_list]
+            b_prof_names = [bp.profile.value for bp in bankers_list]
+            i_summary = i_prof_names[0] if len(set(i_prof_names)) == 1 else "Misto (" + "/".join([ip.profile.name for ip in interns_list]) + ")"
+            b_summary = b_prof_names[0] if len(set(b_prof_names)) == 1 else "Misto (" + "/".join([bp.profile.name for bp in bankers_list]) + ")"
+
             rd = {
                 "winner": winner_role.value if isinstance(winner_role, Role) else winner_role,
                 "cause": cause_str,
                 "rounds": final_rounds,
                 "b_score": banker_score,
                 "i_score": intern_score,
-                "profile": profile.value,
+                "profile": i_summary,
+                "intern_profile": i_summary,
+                "banker_profile": b_summary,
+                "matchup": f"{b_summary} vs {i_summary}",
                 "tier_telemetry": tier_telemetry,
                 "total_vetoes": total_vetoes,
                 "forced_committees": forced_committees,

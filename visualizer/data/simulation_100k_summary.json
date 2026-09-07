@@ -1,17 +1,17 @@
 {
   "n_games": 100000,
-  "total_time_seconds": 144.96218061447144,
+  "total_time_seconds": 186.14891362190247,
   "banker_win_rate": 45.877,
   "intern_win_rate": 54.123,
   "avg_rounds": 5.68731,
   "score_distribution": {
-    "3 x 4": 23986,
-    "4 x 0": 14061,
-    "1 x 4": 14726,
     "4 x 1": 16204,
-    "4 x 2": 11779,
+    "3 x 4": 23986,
     "2 x 4": 15393,
     "4 x 3": 3833,
+    "4 x 2": 11779,
+    "4 x 0": 14061,
+    "1 x 4": 14726,
     "0 x 4": 18
   },
   "tier_funnel": {

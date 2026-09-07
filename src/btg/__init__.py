@@ -8,6 +8,7 @@ from .constants import (
     CARD_BASE_VALUES,
     INITIAL_COMMERCIAL_DECK,
     Role,
+    BankerProfile,
     InternProfile,
     ContractSpec,
     SEVEN_TIERS_CATALOG
@@ -26,6 +27,7 @@ __all__ = [
     'CARD_BASE_VALUES',
     'INITIAL_COMMERCIAL_DECK',
     'Role',
+    'BankerProfile',
     'InternProfile',
     'ContractSpec',
     'SEVEN_TIERS_CATALOG',

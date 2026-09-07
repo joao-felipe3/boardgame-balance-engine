@@ -9,7 +9,7 @@ import numpy as np
 from typing import List, Dict, Tuple, Optional, Set
 from dataclasses import dataclass
 
-from .constants import CardType, Role, InternProfile, ContractSpec
+from .constants import CardType, Role, InternProfile, BankerProfile, ContractSpec
 from .deck import ResourceCard
 
 
@@ -28,14 +28,14 @@ class PlayerAI:
     __slots__ = (
         'id', 'role', 'profile', 'is_active_saboteur', 'rng',
         'hand', 'interest_tokens', 'suspicions', 'known_traitors',
-        'credits_accumulated', 'public_known_cards'
+        'credits_accumulated', 'public_known_cards', 'consecutive_rounds'
     )
 
     def __init__(
         self,
         player_id: int,
         role: Role,
-        profile: InternProfile,
+        profile: object,
         rng: random.Random,
         is_active_saboteur: bool = False
     ):
@@ -51,6 +51,7 @@ class PlayerAI:
         self.known_traitors: Set[int] = set()
         self.credits_accumulated: int = 0
         self.public_known_cards: List[CardType] = []
+        self.consecutive_rounds: int = 0
 
     def accumulate_holding_interest(self):
         """Ficar no banco rende +1 Token de Juros (máx 3)."""
@@ -101,6 +102,16 @@ class PlayerAI:
         is_dry = (best_total_val < expected_quota) and (round_num >= 2) and (not has_req_real)
 
         if self.role == Role.BANKER:
+            if self.profile == BankerProfile.CONSERVATIVE:
+                # Conservador: se liquidez estiver no limite, prefere banco para acumular rendimento
+                is_dry = (best_total_val <= expected_quota) and (round_num >= 2) and (not has_req_real)
+            elif self.profile == BankerProfile.PRAGMATIC:
+                # Pragmático: topa ir para o comitê mesmo com liquidez justa
+                is_dry = (best_total_val < expected_quota - 1) and (round_num >= 2) and (not has_req_real)
+            elif self.profile == BankerProfile.STRATEGIST:
+                # Estrategista: se já jogou 2 rodadas seguidas, prefere banco para girar a carteira
+                is_dry = is_dry or (self.consecutive_rounds >= 2 and round_num <= 4)
+
             top_card_names = [f"{c.card_type.name.split(' ')[0]}({c.base_value}pts)" for c in eligible_cards[:cost]]
             offered_str = " + ".join(top_card_names) if top_card_names else "Liquidez Baixa"
             if tokens_to_offer > 0:
@@ -129,28 +140,58 @@ class PlayerAI:
                 req_v = req_val if has_req_real else max(3, int(expected_quota))
                 offered_str = f"{contract.req_commodity.name.split(' ')[0]}(~{req_v}pts)" if contract.req_commodity else f"Liquidez Média(~{int(expected_quota)}pts)"
                 return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=False, offered_desc=offered_str)
+            elif self.profile == InternProfile.D_OPPORTUNIST:
+                claims = has_req_real or (contract.req_commodity is not None and round_num >= 3 and self.rng.random() < 0.50)
+                req_v = req_val if has_req_real else max(3, int(expected_quota))
+                offered_str = f"{contract.req_commodity.name.split(' ')[0]}(~{req_v}pts)" if contract.req_commodity else f"Liquidez Adaptável(~{int(expected_quota)}pts)"
+                return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=False, offered_desc=offered_str)
+            elif self.profile == InternProfile.E_TECHNICIAN:
+                claims = has_req_real
+                req_v = req_val if has_req_real else 0
+                offered_str = f"{contract.req_commodity.name.split(' ')[0]}({req_v}pts)" if has_req_real else f"Liquidez Calculada(~{int(expected_quota)}pts)"
+                return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=is_dry, offered_desc=offered_str)
 
     def vote_on_proposal(self, proposer: int, committee: List[int], contract: ContractSpec, round_num: int) -> bool:
-        """Votação de governança corporativa."""
+        """Votação de governança corporativa diferenciada por perfil."""
         if self.role == Role.BANKER:
-            # 1. Rejeição imediata se o propositor é um traidor já comprovado ou está sob suspeita ativa (>= 0.50)
+            # 1. Rejeição imediata se o propositor é um traidor já comprovado
             if proposer in self.known_traitors:
                 return False
-            # Veto a Presidente sob Suspeita (Governança Corporativa):
-            # Banqueiros não aprovam governos formados por presidentes sob suspeita ativa (>= 0.50)
-            if proposer != self.id and self.suspicions[proposer] >= 0.50:
+
+            if self.profile == BankerProfile.CONSERVATIVE:
+                prop_threshold = 0.45
+                mem_threshold = 0.60
+                comm_with_self_limit = 0.52
+                avg_comm_limit = 0.45
+            elif self.profile == BankerProfile.PRAGMATIC:
+                prop_threshold = 0.55
+                mem_threshold = 0.75
+                comm_with_self_limit = 0.68
+                avg_comm_limit = 0.55
+            elif self.profile == BankerProfile.STRATEGIST:
+                prop_threshold = 0.50
+                mem_threshold = 0.68
+                comm_with_self_limit = 0.58
+                avg_comm_limit = 0.48
+            else:  # BALANCED ou fallback
+                prop_threshold = 0.50
+                mem_threshold = 0.70
+                comm_with_self_limit = 0.60
+                avg_comm_limit = 0.50
+
+            if proposer != self.id and self.suspicions[proposer] >= prop_threshold:
                 return False
 
             for p in committee:
-                if p in self.known_traitors or self.suspicions[p] >= 0.70:
+                if p in self.known_traitors or self.suspicions[p] >= mem_threshold:
                     return False
             if self.id in committee:
                 others = [p for p in committee if p != self.id]
                 max_sus = max([self.suspicions[p] for p in others], default=0.0)
-                return max_sus < 0.60
+                return max_sus < comm_with_self_limit
             else:
                 avg_sus = sum(self.suspicions[p] for p in committee) / len(committee)
-                return avg_sus < 0.50
+                return avg_sus < avg_comm_limit
         else:
             if self.profile == InternProfile.A_AGGRESSIVE:
                 return (self.id in committee) or (self.rng.random() < 0.30)
@@ -164,6 +205,16 @@ class PlayerAI:
                 if self.id in committee:
                     return True
                 return self.rng.random() < 0.25
+            elif self.profile == InternProfile.D_OPPORTUNIST:
+                if self.id in committee:
+                    return True
+                if contract.tier <= 2:
+                    return True
+                return self.rng.random() < 0.35
+            elif self.profile == InternProfile.E_TECHNICIAN:
+                if self.id in committee:
+                    return True
+                return self.rng.random() < 0.50
         return True
 
     def plan_honest_contribution(
@@ -206,6 +257,12 @@ class PlayerAI:
             base_v = sum(c.base_value for c in cb)
             needed_tokens = max(0, int(np.ceil(quota_needed - base_v)))
             tokens_to_use = min(self.interest_tokens, needed_tokens)
+
+            # Estrategista poupa tokens em rodadas iniciais se cartas cobrirem ou ficarem próximas
+            if self.role == Role.BANKER and self.profile == BankerProfile.STRATEGIST and round_num <= 3 and not is_match_point and contract.tier < 6:
+                if base_v >= quota_needed - 1 and tokens_to_use > 1:
+                    tokens_to_use = 1
+
             total_v = base_v + tokens_to_use
 
             has_safira = any(c.card_type in (CardType.SF, CardType.WILD) for c in cb)
@@ -238,12 +295,29 @@ class PlayerAI:
 
         chosen: List[ResourceCard] = []
 
+        # Técnico cumpre a cota do insumo para NÃO tomar a penalidade de 0.80 por quebra de insumo!
+        if self.profile == InternProfile.E_TECHNICIAN and is_responsible_for_req and contract.req_commodity is not None:
+            req_cards = [c for c in self.hand if c.card_type in (contract.req_commodity, CardType.WILD)]
+            if req_cards:
+                req_cards.sort(key=lambda c: c.base_value)
+                chosen.append(req_cards[0])
+                if toxic_cards and (contract.committee_size >= 3 or round_num >= 3):
+                    chosen.append(toxic_cards[0])
+                remaining_low = [c for c in low_pos if c not in chosen]
+                while len(chosen) < cost and remaining_low:
+                    chosen.append(remaining_low.pop(0))
+                remaining_hand = [c for c in self.hand if c not in chosen]
+                while len(chosen) < cost and remaining_hand:
+                    chosen.append(remaining_hand.pop(0))
+                return chosen[:cost], 0
+
         if toxic_cards and (contract.committee_size >= 3 or round_num >= 3):
             chosen.append(toxic_cards.pop(0))
             while len(chosen) < cost and low_pos:
                 chosen.append(low_pos.pop(0))
-            while len(chosen) < cost and self.hand:
-                chosen.append(self.hand[0])
+            remaining_hand = [c for c in self.hand if c not in chosen]
+            while len(chosen) < cost and remaining_hand:
+                chosen.append(remaining_hand.pop(0))
             return chosen[:cost], 0
 
         if is_responsible_for_req and contract.req_commodity is not None:
@@ -256,7 +330,8 @@ class PlayerAI:
 
         while len(chosen) < cost and low_pos:
             chosen.append(low_pos.pop(0))
-        while len(chosen) < cost and self.hand:
-            chosen.append(self.hand[0])
+        remaining_hand = [c for c in self.hand if c not in chosen]
+        while len(chosen) < cost and remaining_hand:
+            chosen.append(remaining_hand.pop(0))
 
         return chosen[:cost], 0

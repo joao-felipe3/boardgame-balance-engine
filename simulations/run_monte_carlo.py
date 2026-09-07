@@ -25,19 +25,42 @@ try:
 except Exception:
     pass
 
-from src.btg import Role, InternProfile, simulate_single_match
+from src.btg import Role, InternProfile, BankerProfile, simulate_single_match
 
 
-def _worker_simulate_chunk(args: Tuple[int, int, int]) -> List[Dict]:
-    """Executa um lote (chunk) de partidas em um processo trabalhador."""
-    start_idx, count, seed_base = args
-    profiles = [InternProfile.A_AGGRESSIVE, InternProfile.B_SLEEPER, InternProfile.C_HEDGE]
+def _worker_simulate_chunk(args: Tuple) -> List[Dict]:
+    """Executa um lote (chunk) de partidas em um processo trabalhador com suporte a múltiplos perfis."""
+    start_idx, count, seed_base, banker_prof_opt, intern_prof_opt = args
+    all_intern_profs = list(InternProfile)
+    all_banker_profs = list(BankerProfile)
     chunk_results = []
     for i in range(count):
         game_idx = start_idx + i
         rng = random.Random(seed_base + game_idx)
-        prof = rng.choice(profiles)
-        res = simulate_single_match(game_idx, prof, seed=seed_base + game_idx, record_trace=False)
+
+        # Perfil do estagiário
+        if intern_prof_opt is None or intern_prof_opt in ('all', 'random'):
+            i_prof = rng.choice(all_intern_profs)
+        elif intern_prof_opt.lower() == 'mixed':
+            i_prof = 'MIXED'
+        else:
+            i_prof = intern_prof_opt
+
+        # Perfil do banqueiro
+        if banker_prof_opt is None or banker_prof_opt in ('all', 'random'):
+            b_prof = rng.choice(all_banker_profs)
+        elif banker_prof_opt.lower() == 'mixed':
+            b_prof = 'MIXED'
+        else:
+            b_prof = banker_prof_opt
+
+        res = simulate_single_match(
+            game_idx,
+            seed=seed_base + game_idx,
+            record_trace=False,
+            banker_profile=b_prof,
+            intern_profile=i_prof
+        )
         chunk_results.append(res)
     return chunk_results
 
@@ -46,7 +69,9 @@ def run_monte_carlo(
     n_games: int = 100000,
     seed_base: int = 420000,
     num_workers: Optional[int] = None,
-    export_json: Optional[str] = None
+    export_json: Optional[str] = None,
+    banker_profile: Optional[str] = None,
+    intern_profile: Optional[str] = None
 ) -> pd.DataFrame:
     """Executa simulação Monte Carlo massiva paralelizada com telemetria rica."""
     if num_workers is None:
@@ -55,6 +80,8 @@ def run_monte_carlo(
     print("=" * 84)
     print(f"       SIMULADOR MONTE CARLO MASSIVO - BTG MADAGASCAR v14.0 ({n_games:,} JOGOS)")
     print(f"       Processamento Paralelo: {num_workers} workers multinúcleo")
+    if banker_profile or intern_profile:
+        print(f"       Perfis: Banqueiro = {banker_profile or 'Aleatório/Todos'} | Estagiário = {intern_profile or 'Aleatório/Todos'}")
     print("=" * 84)
 
     t0 = time.time()
@@ -65,7 +92,7 @@ def run_monte_carlo(
     curr = 0
     while curr < n_games:
         count = min(chunk_size, n_games - curr)
-        tasks.append((curr, count, seed_base))
+        tasks.append((curr, count, seed_base, banker_profile, intern_profile))
         curr += count
 
     results = []
@@ -247,18 +274,17 @@ def run_monte_carlo(
     print(f"    - Sobre Banqueiros Honestos                : {avg_bnk_sus:.3f} (baixo ruído)")
 
     # -------------------------------------------------------------------------
-    # 6. ANÁLISE COMPARATIVA POR PERFIL DE IA
+    # 6. ANÁLISE COMPARATIVA POR PERFIL DE ESTAGIÁRIO
     # -------------------------------------------------------------------------
     print("\n" + "=" * 84)
-    print(" 6. COMPARATIVO MULTIDIMENSIONAL POR PERFIL DE IA")
+    print(" 6. COMPARATIVO MULTIDIMENSIONAL POR PERFIL DE ESTAGIÁRIO")
     print("=" * 84)
-    profiles = [InternProfile.A_AGGRESSIVE, InternProfile.B_SLEEPER, InternProfile.C_HEDGE]
-    print(f"{'Perfil de IA':<34} | {'WR Estag':<9} | {'WR Banco':<9} | {'Duração':<8} | {'Lockout':<8} | {'Desmasc.':<9} | {'Placar Top':<10}")
-    print("-" * 96)
+    print(f"{'Perfil Estagiário':<36} | {'WR Estag':<9} | {'WR Banco':<9} | {'Duração':<8} | {'Lockout':<8} | {'Desmasc.':<9} | {'Placar Top':<10}")
+    print("-" * 98)
     
-    profile_summary = {}
-    for prof in profiles:
-        sub = df[df["profile"] == prof.value]
+    intern_summary = {}
+    for prof in InternProfile:
+        sub = df[df["intern_profile"] == prof.value]
         sub_len = len(sub)
         if sub_len == 0:
             continue
@@ -271,9 +297,9 @@ def run_monte_carlo(
         top_sc_pct = sub["score"].value_counts().iloc[0] / sub_len * 100
         top_str = f"{top_sc} ({top_sc_pct:.1f}%)"
 
-        print(f"{prof.value:<34} | {sub_iw:7.2f}% | {sub_bw:7.2f}% | {sub_dur:6.2f}   | {sub_lock:6.2f}%  | {sub_unm:6.2f}    | {top_str:<10}")
+        print(f"{prof.value:<36} | {sub_iw:7.2f}% | {sub_bw:7.2f}% | {sub_dur:6.2f}   | {sub_lock:6.2f}%  | {sub_unm:6.2f}    | {top_str:<10}")
 
-        profile_summary[prof.value] = {
+        intern_summary[prof.value] = {
             'wr_interns': sub_iw,
             'wr_bankers': sub_bw,
             'avg_rounds': sub_dur,
@@ -282,6 +308,59 @@ def run_monte_carlo(
             'top_score': top_sc
         }
 
+    # -------------------------------------------------------------------------
+    # 7. ANÁLISE COMPARATIVA POR PERFIL DE BANQUEIRO
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 84)
+    print(" 7. COMPARATIVO MULTIDIMENSIONAL POR PERFIL DE BANQUEIRO")
+    print("=" * 84)
+    print(f"{'Perfil Banqueiro':<36} | {'WR Banco':<9} | {'WR Estag':<9} | {'Duração':<8} | {'Vetos Méd':<10} | {'Desmasc.':<9}")
+    print("-" * 98)
+    
+    banker_summary = {}
+    for bprof in BankerProfile:
+        sub = df[df["banker_profile"] == bprof.value]
+        sub_len = len(sub)
+        if sub_len == 0:
+            continue
+        sub_bw = (sub["winner"] == Role.BANKER.value).sum() / sub_len * 100
+        sub_iw = (sub["winner"] == Role.INTERN.value).sum() / sub_len * 100
+        sub_dur = sub["rounds"].mean()
+        sub_vet = sub["total_vetoes"].mean()
+        sub_unm = sub["interns_unmasked"].mean()
+
+        print(f"{bprof.value:<36} | {sub_bw:7.2f}% | {sub_iw:7.2f}% | {sub_dur:6.2f}   | {sub_vet:7.2f}    | {sub_unm:6.2f}")
+
+        banker_summary[bprof.value] = {
+            'wr_bankers': sub_bw,
+            'wr_interns': sub_iw,
+            'avg_rounds': sub_dur,
+            'avg_vetoes': sub_vet,
+            'avg_unmasked': sub_unm
+        }
+
+    # -------------------------------------------------------------------------
+    # 8. MATRIZ DE CONFRONTO CRUZADO (BANKERS vs INTERNS)
+    # -------------------------------------------------------------------------
+    matchup_summary = {}
+    if "banker_profile" in df.columns and "intern_profile" in df.columns:
+        print("\n" + "=" * 84)
+        print(" 8. MATRIZ DE CONFRONTO CRUZADO (TAXA DE VITÓRIA DOS BANQUEIROS)")
+        print("=" * 84)
+        header = f"{'Banqueiro \\ Estagiário':<28} | " + " | ".join([f"{p.name[:8]:<8}" for p in InternProfile])
+        print(header)
+        print("-" * len(header))
+        for bp in BankerProfile:
+            row_vals = []
+            for ip in InternProfile:
+                sub = df[(df["banker_profile"] == bp.value) & (df["intern_profile"] == ip.value)]
+                if len(sub) > 0:
+                    wr = (sub["winner"] == Role.BANKER.value).sum() / len(sub) * 100
+                    row_vals.append(f"{wr:6.1f}% ")
+                    matchup_summary[f"{bp.name} vs {ip.name}"] = float(wr)
+                else:
+                    row_vals.append("   -    ")
+            print(f"{bp.name:<28} | " + " | ".join(row_vals))
     print("=" * 84)
 
     if export_json:
@@ -310,7 +389,10 @@ def run_monte_carlo(
                 'avg_intern_sus': float(avg_int_sus),
                 'avg_banker_sus': float(avg_bnk_sus)
             },
-            'by_profile': profile_summary
+            'by_intern_profile': intern_summary,
+            'by_banker_profile': banker_summary,
+            'by_matchup': matchup_summary,
+            'by_profile': intern_summary
         }
         with open(export_json, 'w', encoding='utf-8') as f:
             json.dump(summary_payload, f, indent=2, ensure_ascii=False)
@@ -324,6 +406,14 @@ if __name__ == '__main__':
     parser.add_argument("--games", "-n", type=int, default=100000, help="Número de partidas a simular (padrão: 100.000)")
     parser.add_argument("--workers", "-w", type=int, default=None, help="Número de workers paralelos (padrão: CPU count)")
     parser.add_argument("--export", "-e", type=str, default=None, help="Caminho para exportar resumo em JSON")
+    parser.add_argument("--banker-profile", "-bp", type=str, default=None, help="Perfil dos banqueiros (ex: BALANCED, CONSERVATIVE, PRAGMATIC, STRATEGIST, mixed, all)")
+    parser.add_argument("--intern-profile", "-ip", type=str, default=None, help="Perfil dos estagiários (ex: A_AGGRESSIVE, B_SLEEPER, C_HEDGE, D_OPPORTUNIST, E_TECHNICIAN, mixed, all)")
     args = parser.parse_args()
 
-    run_monte_carlo(n_games=args.games, num_workers=args.workers, export_json=args.export)
+    run_monte_carlo(
+        n_games=args.games,
+        num_workers=args.workers,
+        export_json=args.export,
+        banker_profile=args.banker_profile,
+        intern_profile=args.intern_profile
+    )

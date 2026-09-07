@@ -41,10 +41,19 @@ class Role(Enum):
     INTERN = 'Estagiario'
 
 
+class BankerProfile(Enum):
+    BALANCED = 'Equilibrado (Auditoria v14 Padrão)'
+    CONSERVATIVE = 'Conservador (Auditor Rígido / Veto Firme)'
+    PRAGMATIC = 'Pragmático (Foco em Liquidez e Metas)'
+    STRATEGIST = 'Estrategista (Rotação de Banco e Ativos)'
+
+
 class InternProfile(Enum):
     A_AGGRESSIVE = 'A (Agressivo / Blefe Imediato)'
     B_SLEEPER = 'B (Infiltracao Profunda / Sleeper)'
     C_HEDGE = 'C (Hedge / Retencao Economica)'
+    D_OPPORTUNIST = 'D (Oportunista / Camaleão Adaptativo)'
+    E_TECHNICIAN = 'E (Técnico / Falsa Idoneidade)'
 
 
 @dataclass
