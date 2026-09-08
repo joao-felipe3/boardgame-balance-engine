@@ -15,6 +15,7 @@ import argparse
 
 from simulations.run_monte_carlo import run_monte_carlo
 from simulations.benchmark_profiles import benchmark_profiles
+from simulations.analyze_causality import run_causal_analysis
 from visualizer.create_dashboard import generate_dashboard
 from src.btg.tracer import generate_trace_dataset
 
@@ -27,8 +28,9 @@ def main():
     parser.add_argument("--banker-profile", "-bp", type=str, default=None, help="Perfil dos banqueiros (ex: BALANCED, CONSERVATIVE, PRAGMATIC, STRATEGIST, mixed, all)")
     parser.add_argument("--intern-profile", "-ip", type=str, default=None, help="Perfil dos estagiários (ex: A_AGGRESSIVE, B_SLEEPER, C_HEDGE, D_OPPORTUNIST, E_TECHNICIAN, mixed, all)")
     parser.add_argument("--benchmark", action="store_true", help="Executar benchmark comparativo dos perfis")
+    parser.add_argument("--causal", action="store_true", help="Executar Análise Causal, Árvores de Decisão e SHAP")
     parser.add_argument("--dashboard", action="store_true", help="Gerar traces e atualizar visualizador HTML")
-    parser.add_argument("--all", action="store_true", help="Executar simulação, benchmark e atualizar dashboard")
+    parser.add_argument("--all", action="store_true", help="Executar simulação, benchmark, análise causal e atualizar dashboard")
 
     args = parser.parse_args()
 
@@ -50,6 +52,7 @@ def main():
             intern_profile=args.intern_profile
         )
         benchmark_profiles(2000, matrix_sample=500)
+        run_causal_analysis(20000, num_workers=args.workers, export_json="visualizer/data/causal_analysis_summary.json")
         generate_trace_dataset("visualizer/data/game_traces.json")
         generate_dashboard()
         return
@@ -65,6 +68,11 @@ def main():
 
     if args.benchmark:
         benchmark_profiles(2000, matrix_sample=500)
+
+    if args.causal:
+        n_games = args.sim if args.sim is not None else 20000
+        export_p = args.export or "visualizer/data/causal_analysis_summary.json"
+        run_causal_analysis(n_games, num_workers=args.workers, export_json=export_p)
 
     if args.dashboard:
         print("Gerando Traces e Visualizador...")

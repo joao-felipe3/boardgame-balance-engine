@@ -32,6 +32,16 @@ pip install -r requirements.txt
   python run.py --benchmark
   ```
 
+* **Executar Análise Causal (Árvores de Decisão, Random Forest, SHAP & Tipping Points):**
+  ```bash
+  python run.py --causal --sim 20000 --export visualizer/data/causal_analysis_summary.json
+  ```
+  *O que este módulo entrega:*
+  - **Árvores de Decisão Rasas (Explainable AI):** Extração de regras explícitas *SE-ENTÃO* que definem os caminhos matemáticos de vitória/derrota.
+  - **Importância de Features & Odds Ratios:** Ranqueamento de impacto relativo e chances multiplicativas calculadas via regressão logística padronizada.
+  - **Valores SHAP (TreeExplainer):** Atribuição marginal de impacto e direção causal para cada decisão ou evento da partida.
+  - **Tipping Points Não-Óbvios:** Análise do impacto diferencial entre Tiers (ex: Tier 1 vs Tier 3), saturação de queima de tokens de rendimento e limiar crítico de infiltrações toleradas pela mesa.
+
 * **Apenas Gerar Traces e Atualizar Visualizador HTML:**
   ```bash
   python run.py --dashboard
@@ -53,7 +63,8 @@ BTG/
 │
 ├── simulations/
 │   ├── run_monte_carlo.py   # Simulação estatística massiva
-│   └── benchmark_profiles.py # Comparador de performance de IA
+│   ├── benchmark_profiles.py # Comparador de performance de IA
+│   └── analyze_causality.py # Motor de inferência causal (Árvores, RF, SHAP)
 │
 ├── visualizer/
 │   ├── create_dashboard.py  # Renderizador do visualizador interativo
