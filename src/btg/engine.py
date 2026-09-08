@@ -229,9 +229,11 @@ def coordinate_committee_contributions(
                     # R1 honesto, R2 desperta se 1x0
                     should_sabotage = (round_num == 2 and banker_score >= 1 and p.rng.random() < 0.40)
             elif p.profile == InternProfile.E_TECHNICIAN:
-                # Técnico: joga cooperativo nas primeiras rodadas para acumular cartas/créditos e ataca a partir da R3
-                if round_num <= 2:
+                # Técnico: joga cooperativo na R1 para acumular cartas; na R2 desperta cirúrgico se 1x0 (45%), e ataca a partir da R3
+                if round_num == 1:
                     should_sabotage = False
+                elif round_num == 2:
+                    should_sabotage = (banker_score >= 1 and p.rng.random() < 0.45)
                 else:
                     should_sabotage = True
 

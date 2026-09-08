@@ -146,10 +146,11 @@ class PlayerAI:
                 offered_str = f"{contract.req_commodity.name.split(' ')[0]}(~{req_v}pts)" if contract.req_commodity else f"Liquidez Adaptável(~{int(expected_quota)}pts)"
                 return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=False, offered_desc=offered_str)
             elif self.profile == InternProfile.E_TECHNICIAN:
-                claims = has_req_real
-                req_v = req_val if has_req_real else 0
-                offered_str = f"{contract.req_commodity.name.split(' ')[0]}({req_v}pts)" if has_req_real else f"Liquidez Calculada(~{int(expected_quota)}pts)"
-                return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=is_dry, offered_desc=offered_str)
+                claims = has_req_real or (contract.req_commodity is not None and round_num >= 3 and self.rng.random() < 0.50)
+                req_v = req_val if has_req_real else (max(3, int(expected_quota)) if claims else 0)
+                offered_str = f"{contract.req_commodity.name.split(' ')[0]}({req_v}pts)" if claims else f"Liquidez Calculada(~{int(expected_quota)}pts)"
+                should_bench = is_dry and round_num <= 2
+                return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=should_bench, offered_desc=offered_str)
 
     def vote_on_proposal(self, proposer: int, committee: List[int], contract: ContractSpec, round_num: int) -> bool:
         """Votação de governança corporativa diferenciada por perfil."""
@@ -214,7 +215,7 @@ class PlayerAI:
             elif self.profile == InternProfile.E_TECHNICIAN:
                 if self.id in committee:
                     return True
-                return self.rng.random() < 0.50
+                return self.rng.random() < (0.45 if round_num <= 2 else 0.20)
         return True
 
     def plan_honest_contribution(
@@ -295,21 +296,6 @@ class PlayerAI:
 
         chosen: List[ResourceCard] = []
 
-        # Técnico cumpre a cota do insumo para NÃO tomar a penalidade de 0.80 por quebra de insumo!
-        if self.profile == InternProfile.E_TECHNICIAN and is_responsible_for_req and contract.req_commodity is not None:
-            req_cards = [c for c in self.hand if c.card_type in (contract.req_commodity, CardType.WILD)]
-            if req_cards:
-                req_cards.sort(key=lambda c: c.base_value)
-                chosen.append(req_cards[0])
-                if toxic_cards and (contract.committee_size >= 3 or round_num >= 3):
-                    chosen.append(toxic_cards[0])
-                remaining_low = [c for c in low_pos if c not in chosen]
-                while len(chosen) < cost and remaining_low:
-                    chosen.append(remaining_low.pop(0))
-                remaining_hand = [c for c in self.hand if c not in chosen]
-                while len(chosen) < cost and remaining_hand:
-                    chosen.append(remaining_hand.pop(0))
-                return chosen[:cost], 0
 
         if toxic_cards and (contract.committee_size >= 3 or round_num >= 3):
             chosen.append(toxic_cards.pop(0))
