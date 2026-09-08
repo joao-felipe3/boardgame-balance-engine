@@ -79,6 +79,15 @@ pip install -r requirements.txt
   - **Ganho de Informação ($IG$) por Evento:** Mensuração em bits de quanto cada tipo de reprovação e voto revela sobre a lealdade dos membros do comitê.
   - **Ranking de Eficiência de Camuflagem:** Identifica quais arquétipos de estagiário (`B_SLEEPER`, `C_HEDGE`, etc.) melhor ocultam sua identidade da dedução bayesiana da mesa.
 
+* **Executar Avaliação Atuarial da DLC de Diretrizes & Poderes Corporativos:**
+  ```bash
+  python run.py --dlc --sim 2000
+  ```
+  *O que este módulo entrega:*
+  - **Catálogo de 14 Diretrizes Regulatórias:** Compliance, Economia, Governança e Estrutura de Comitê.
+  - **Comparativo de 4 Regimes de Ativação:** Sempre Ativo (R1-R7) vs Dado 1d6 (50%) vs Mid-Game (R3-R5) vs Catch-Up pós-derrota.
+  - **Impacto Matemático no Balanceamento:** Demonstração de que a DLC preserva o equilíbrio nominal da v14.0 (+0.05 p.p. com dado 1d6 em 10.000 partidas).
+
 * **Apenas Gerar Traces e Atualizar Visualizador HTML:**
   ```bash
   python run.py --dashboard
@@ -96,6 +105,7 @@ BTG/
 │       ├── deck.py          # Gestão do baralho e Mercado de Balcão Aberto
 │       ├── player.py        # Jogador, carteira, tokens e dedução bayesiana
 │       ├── engine.py        # Motor das rodadas, comitês, votações e avaliação
+│       ├── events.py        # Baralho de Diretrizes & Poderes da DLC
 │       └── tracer.py        # Serializador de traces para o dashboard
 │
 ├── simulations/
@@ -105,7 +115,8 @@ BTG/
 │   ├── analyze_markov.py      # Resolvedor analítico de Cadeias de Markov Absorventes
 │   ├── analyze_game_theory.py # Teoria dos Jogos, Equilíbrio de Nash & Fictitious Play
 │   ├── stress_test_economy.py # Teste de Estresse Econômico & Choques de Liquidez
-│   └── analyze_information.py # Teoria da Informação & Entropia de Shannon
+│   ├── analyze_information.py # Teoria da Informação & Entropia de Shannon
+│   └── analyze_dlc_events.py  # Avaliação Atuarial da DLC de Diretrizes & Poderes
 │
 ├── visualizer/
 │   ├── create_dashboard.py  # Renderizador do visualizador interativo

@@ -29,8 +29,8 @@ from src.btg import Role, InternProfile, BankerProfile, simulate_single_match
 
 
 def _worker_simulate_chunk(args: Tuple) -> List[Dict]:
-    """Executa um lote (chunk) de partidas em um processo trabalhador com suporte a múltiplos perfis."""
-    start_idx, count, seed_base, banker_prof_opt, intern_prof_opt = args
+    """Executa um lote (chunk) de partidas em um processo trabalhador com suporte a múltiplos perfis e DLC."""
+    start_idx, count, seed_base, banker_prof_opt, intern_prof_opt, enable_directives, directive_regime = args
     all_intern_profs = list(InternProfile)
     all_banker_profs = list(BankerProfile)
     chunk_results = []
@@ -59,7 +59,9 @@ def _worker_simulate_chunk(args: Tuple) -> List[Dict]:
             seed=seed_base + game_idx,
             record_trace=False,
             banker_profile=b_prof,
-            intern_profile=i_prof
+            intern_profile=i_prof,
+            enable_directives=enable_directives,
+            directive_regime=directive_regime
         )
         chunk_results.append(res)
     return chunk_results
@@ -71,14 +73,17 @@ def run_monte_carlo(
     num_workers: Optional[int] = None,
     export_json: Optional[str] = None,
     banker_profile: Optional[str] = None,
-    intern_profile: Optional[str] = None
+    intern_profile: Optional[str] = None,
+    enable_directives: bool = False,
+    directive_regime: str = "DICE_50"
 ) -> pd.DataFrame:
     """Executa simulação Monte Carlo massiva paralelizada com telemetria rica."""
     if num_workers is None:
         num_workers = max(1, os.cpu_count() or 4)
 
     print("=" * 84)
-    print(f"       SIMULADOR MONTE CARLO MASSIVO - BTG MADAGASCAR v14.0 ({n_games:,} JOGOS)")
+    dlc_status = f" | DLC ATIVA ({directive_regime})" if enable_directives else ""
+    print(f"       SIMULADOR MONTE CARLO MASSIVO - BTG MADAGASCAR v14.0 ({n_games:,} JOGOS){dlc_status}")
     print(f"       Processamento Paralelo: {num_workers} workers multinúcleo")
     if banker_profile or intern_profile:
         print(f"       Perfis: Banqueiro = {banker_profile or 'Aleatório/Todos'} | Estagiário = {intern_profile or 'Aleatório/Todos'}")
@@ -92,7 +97,7 @@ def run_monte_carlo(
     curr = 0
     while curr < n_games:
         count = min(chunk_size, n_games - curr)
-        tasks.append((curr, count, seed_base, banker_profile, intern_profile))
+        tasks.append((curr, count, seed_base, banker_profile, intern_profile, enable_directives, directive_regime))
         curr += count
 
     results = []

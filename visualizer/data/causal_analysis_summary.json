@@ -1,317 +1,317 @@
 {
   "n_games": 20000,
-  "total_time_seconds": 79.01108694076538,
-  "baseline_banker_win_rate": 54.50000000000001,
+  "total_time_seconds": 79.96933960914612,
+  "baseline_banker_win_rate": 47.65,
   "top_rules": [
     {
       "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.50",
-        "Suspeita Média Final sobre Estagiários <= 0.79",
-        "Saldo do Placar após R3 (+3, +1, -1 ou -3) > 0.00"
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.42",
+        "Suspeita Média Final sobre Estagiários <= 0.77",
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.31"
       ],
-      "p_banker_win": 0.9994904718230918,
-      "p_intern_win": 0.0005095281769081916,
-      "samples": 9813,
-      "confidence": "99.9%"
-    },
-    {
-      "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.50",
-        "Suspeita Média Final sobre Estagiários <= 0.79",
-        "Saldo do Placar após R3 (+3, +1, -1 ou -3) <= 0.00"
-      ],
-      "p_banker_win": 0.8385345997286295,
-      "p_intern_win": 0.16146540027137046,
-      "samples": 737,
-      "confidence": "83.9%"
-    },
-    {
-      "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.50",
-        "Suspeita Média Final sobre Estagiários <= 0.60"
-      ],
-      "p_banker_win": 0.49337748344370863,
-      "p_intern_win": 0.5066225165562914,
-      "samples": 604,
-      "confidence": "50.7%"
-    },
-    {
-      "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.50",
-        "Suspeita Média Final sobre Estagiários > 0.79"
-      ],
-      "p_banker_win": 0.2564935064935065,
-      "p_intern_win": 0.7435064935064934,
-      "samples": 616,
-      "confidence": "74.4%"
-    },
-    {
-      "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.50",
-        "Suspeita Média Final sobre Estagiários > 0.60",
-        "Suspeita Média Final sobre Estagiários <= 0.72"
-      ],
-      "p_banker_win": 0.02768729641693811,
-      "p_intern_win": 0.9723127035830619,
-      "samples": 614,
-      "confidence": "97.2%"
-    },
-    {
-      "conditions": [
-        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.50",
-        "Suspeita Média Final sobre Estagiários > 0.60",
-        "Suspeita Média Final sobre Estagiários > 0.72"
-      ],
-      "p_banker_win": 0.00013130252100840336,
-      "p_intern_win": 0.9998686974789915,
-      "samples": 7616,
+      "p_banker_win": 0.999633923123856,
+      "p_intern_win": 0.00036607687614398365,
+      "samples": 8195,
       "confidence": "100.0%"
+    },
+    {
+      "conditions": [
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.42",
+        "Suspeita Média Final sobre Estagiários <= 0.77",
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.31"
+      ],
+      "p_banker_win": 0.9319213313161876,
+      "p_intern_win": 0.0680786686838124,
+      "samples": 661,
+      "confidence": "93.2%"
+    },
+    {
+      "conditions": [
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.42",
+        "Suspeita Média Final sobre Estagiários > 0.77"
+      ],
+      "p_banker_win": 0.5617792421746294,
+      "p_intern_win": 0.4382207578253706,
+      "samples": 607,
+      "confidence": "56.2%"
+    },
+    {
+      "conditions": [
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.42",
+        "Suspeita Média Final sobre Estagiários <= 0.64"
+      ],
+      "p_banker_win": 0.538971807628524,
+      "p_intern_win": 0.46102819237147596,
+      "samples": 603,
+      "confidence": "53.9%"
+    },
+    {
+      "conditions": [
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.42",
+        "Suspeita Média Final sobre Estagiários > 0.64",
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) <= 0.53"
+      ],
+      "p_banker_win": 0.08006535947712418,
+      "p_intern_win": 0.9199346405228759,
+      "samples": 612,
+      "confidence": "92.0%"
+    },
+    {
+      "conditions": [
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.42",
+        "Suspeita Média Final sobre Estagiários > 0.64",
+        "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo) > 0.53"
+      ],
+      "p_banker_win": 0.0007509118214975327,
+      "p_intern_win": 0.9992490881785024,
+      "samples": 9322,
+      "confidence": "99.9%"
     }
   ],
   "feature_importance": [
     {
-      "feature": "avg_banker_sus",
-      "description": "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo)",
-      "rf_importance": 0.26566321410137,
-      "odds_ratio": 0.0019067609110761153
-    },
-    {
       "feature": "avg_intern_sus",
       "description": "Suspeita Média Final sobre Estagiários",
-      "rf_importance": 0.2617020793652992,
-      "odds_ratio": 0.0010645617696261103
+      "rf_importance": 0.2717396448943337,
+      "odds_ratio": 0.0009139386578379224
+    },
+    {
+      "feature": "avg_banker_sus",
+      "description": "Suspeita Média Final sobre Banqueiros (Ruído/Falso Positivo)",
+      "rf_importance": 0.270562002663333,
+      "odds_ratio": 0.0025257031386347853
     },
     {
       "feature": "avg_hand_size",
       "description": "Média de Cartas Restantes na Mão",
-      "rf_importance": 0.18965707915319452,
-      "odds_ratio": 7.885725763800881
+      "rf_importance": 0.19570449289070802,
+      "odds_ratio": 8.312750228795604
     },
     {
       "feature": "total_vetoes",
       "description": "Total de Vetos a Comitês Ocorridos",
-      "rf_importance": 0.0792293636613341,
-      "odds_ratio": 1.4715450994196824
+      "rf_importance": 0.07429988378000582,
+      "odds_ratio": 1.2902813862815559
     },
     {
       "feature": "suspicion_gap",
       "description": "Diferencial de Suspeita (Suspeita Estagiário - Suspeita Banqueiro)",
-      "rf_importance": 0.04281603666249526,
-      "odds_ratio": 1.3784464815591941
+      "rf_importance": 0.03901417424338155,
+      "odds_ratio": 1.979421423990707
     },
     {
       "feature": "forced_committees",
       "description": "Comitês Forçados após 3 Vetos Consecutivos",
-      "rf_importance": 0.03897906589678933,
-      "odds_ratio": 1.012850630210733
+      "rf_importance": 0.03664462625093593,
+      "odds_ratio": 1.166831219592436
     },
     {
       "feature": "intern_comm_appearances",
       "description": "Total de Infiltrações de Estagiários nos Comitês",
-      "rf_importance": 0.030955850757492503,
-      "odds_ratio": 0.7482877816478467
+      "rf_importance": 0.03327060256000845,
+      "odds_ratio": 0.6825810077540454
     },
     {
       "feature": "banker_lead_r3",
       "description": "Saldo do Placar após R3 (+3, +1, -1 ou -3)",
-      "rf_importance": 0.023323505291556898,
-      "odds_ratio": 2.6820391489926365
+      "rf_importance": 0.01984878038425664,
+      "odds_ratio": 2.7969022227047424
     },
     {
       "feature": "banker_lead_r2",
       "description": "Saldo do Placar após R2 (+2, 0 ou -2)",
-      "rf_importance": 0.01864714631789631,
-      "odds_ratio": 2.4766798717417333
+      "rf_importance": 0.016638392464346945,
+      "odds_ratio": 2.617949587646941
     },
     {
       "feature": "r5_expanded",
       "description": "Megaconsórcio Expandido para 4 Membros (R5)",
-      "rf_importance": 0.01709565832948332,
-      "odds_ratio": 0.2592157386741305
+      "rf_importance": 0.013153912468275387,
+      "odds_ratio": 0.2799695104617607
     },
     {
       "feature": "r3_success",
       "description": "Sucesso da Operação no Tier 3 (Comitê de 3)",
-      "rf_importance": 0.01030660299796977,
-      "odds_ratio": 1.796233706805694
+      "rf_importance": 0.008710749035591924,
+      "odds_ratio": 1.764659332303748
     },
     {
       "feature": "r2_success",
       "description": "Sucesso da Operação no Tier 2 (Aperto)",
-      "rf_importance": 0.0059887324524244955,
-      "odds_ratio": 1.5404822260422446
+      "rf_importance": 0.005973073805297617,
+      "odds_ratio": 1.5920640473114709
     },
     {
       "feature": "interns_unmasked",
       "description": "Estagiários Totalmente Desmascarados (Suspeita 1.0)",
-      "rf_importance": 0.005425919663605565,
-      "odds_ratio": 3.0836294063802807
-    },
-    {
-      "feature": "total_tokens_spent",
-      "description": "Total de Tokens de Rendimento Utilizados no Jogo",
-      "rf_importance": 0.0031016381481844646,
-      "odds_ratio": 1.9666401958896296
-    },
-    {
-      "feature": "total_toxic_played",
-      "description": "Total de Ativos Tóxicos Jogados no Cofre",
-      "rf_importance": 0.0018386118328714833,
-      "odds_ratio": 0.6868660931038212
-    },
-    {
-      "feature": "first_intern_round",
-      "description": "Primeira Rodada em que um Estagiário Infiltrou",
-      "rf_importance": 0.001380013807383735,
-      "odds_ratio": 0.5525809387469366
-    },
-    {
-      "feature": "r1_success",
-      "description": "Sucesso da Operação no Tier 1 (Abertura)",
-      "rf_importance": 0.0012982122901229038,
-      "odds_ratio": 2.2119555406272036
+      "rf_importance": 0.0035200056591851857,
+      "odds_ratio": 2.8884363705707763
     },
     {
       "feature": "r3_intern",
       "description": "Estagiário Presente no Comitê da R3",
-      "rf_importance": 0.0009231298502929788,
-      "odds_ratio": 1.3895753627200662
+      "rf_importance": 0.002983294845171982,
+      "odds_ratio": 1.4656807571141865
     },
     {
-      "feature": "r2_tokens",
-      "description": "Tokens de Rendimento Gastos na R2",
-      "rf_importance": 0.0005703011696274762,
-      "odds_ratio": 1.0287975826828368
+      "feature": "total_tokens_spent",
+      "description": "Total de Tokens de Rendimento Utilizados no Jogo",
+      "rf_importance": 0.0024332787849057833,
+      "odds_ratio": 1.6374717268056598
     },
     {
-      "feature": "r2_intern",
-      "description": "Estagiário Presente no Comitê da R2",
-      "rf_importance": 0.0005490830376070658,
-      "odds_ratio": 0.8499101939639837
+      "feature": "r1_success",
+      "description": "Sucesso da Operação no Tier 1 (Abertura)",
+      "rf_importance": 0.0016254082605702913,
+      "odds_ratio": 2.289203208693776
+    },
+    {
+      "feature": "total_toxic_played",
+      "description": "Total de Ativos Tóxicos Jogados no Cofre",
+      "rf_importance": 0.0015544936126278982,
+      "odds_ratio": 0.6791558906037074
+    },
+    {
+      "feature": "first_intern_round",
+      "description": "Primeira Rodada em que um Estagiário Infiltrou",
+      "rf_importance": 0.0009045277372977278,
+      "odds_ratio": 0.6137857535517539
     },
     {
       "feature": "r1_intern",
       "description": "Estagiário Presente no Comitê da R1",
-      "rf_importance": 0.0003990223834548696,
-      "odds_ratio": 0.5288339648734212
+      "rf_importance": 0.0005984377091499298,
+      "odds_ratio": 0.6146667338800649
+    },
+    {
+      "feature": "r2_intern",
+      "description": "Estagiário Presente no Comitê da R2",
+      "rf_importance": 0.00038615285011936055,
+      "odds_ratio": 0.8802427759705695
+    },
+    {
+      "feature": "r2_tokens",
+      "description": "Tokens de Rendimento Gastos na R2",
+      "rf_importance": 0.0002465262311596341,
+      "odds_ratio": 1.0231184361714831
     },
     {
       "feature": "r3_tokens",
       "description": "Tokens de Rendimento Gastos na R3",
-      "rf_importance": 0.00014973282954369114,
-      "odds_ratio": 0.8276881782171496
+      "rf_importance": 0.00018753886933727624,
+      "odds_ratio": 0.8542098584286618
     }
   ],
   "shap_ranking": [
     {
       "feature": "avg_banker_sus",
-      "mean_abs_shap": 0.17801027016195545
+      "mean_abs_shap": 0.17990901133838433
     },
     {
       "feature": "avg_intern_sus",
-      "mean_abs_shap": 0.13858998369350725
+      "mean_abs_shap": 0.14352595645773458
     },
     {
       "feature": "avg_hand_size",
-      "mean_abs_shap": 0.08876462621034226
+      "mean_abs_shap": 0.08735406791531347
     },
     {
       "feature": "total_vetoes",
-      "mean_abs_shap": 0.030153205672141997
+      "mean_abs_shap": 0.02839382004940108
     },
     {
       "feature": "suspicion_gap",
-      "mean_abs_shap": 0.021685368283144244
-    },
-    {
-      "feature": "banker_lead_r3",
-      "mean_abs_shap": 0.02150456789514918
+      "mean_abs_shap": 0.022740602807099858
     },
     {
       "feature": "banker_lead_r2",
-      "mean_abs_shap": 0.02021277034758351
+      "mean_abs_shap": 0.019690445613645694
+    },
+    {
+      "feature": "banker_lead_r3",
+      "mean_abs_shap": 0.018032926607342622
     },
     {
       "feature": "forced_committees",
-      "mean_abs_shap": 0.014897195783986805
+      "mean_abs_shap": 0.015806511241992494
     },
     {
       "feature": "intern_comm_appearances",
-      "mean_abs_shap": 0.01064853526126575
+      "mean_abs_shap": 0.012198060158126389
     },
     {
       "feature": "r5_expanded",
-      "mean_abs_shap": 0.009744341174619814
-    },
-    {
-      "feature": "r3_success",
-      "mean_abs_shap": 0.00842395326290973
+      "mean_abs_shap": 0.006657865546642082
     },
     {
       "feature": "r2_success",
-      "mean_abs_shap": 0.006726644891977167
+      "mean_abs_shap": 0.006513690467412689
     },
     {
-      "feature": "total_tokens_spent",
-      "mean_abs_shap": 0.002378748054384692
+      "feature": "r3_success",
+      "mean_abs_shap": 0.006124674176492687
     },
     {
       "feature": "interns_unmasked",
-      "mean_abs_shap": 0.002189356886709736
+      "mean_abs_shap": 0.0032409079295062397
+    },
+    {
+      "feature": "total_tokens_spent",
+      "mean_abs_shap": 0.0021654715002150785
     },
     {
       "feature": "r1_success",
-      "mean_abs_shap": 0.0016468977025931638
+      "mean_abs_shap": 0.002109467718910075
     },
     {
       "feature": "total_toxic_played",
-      "mean_abs_shap": 0.0014621229599911455
+      "mean_abs_shap": 0.0014319487204705196
     },
     {
       "feature": "first_intern_round",
-      "mean_abs_shap": 0.001195625476302783
-    },
-    {
-      "feature": "r2_tokens",
-      "mean_abs_shap": 0.000985247459857942
+      "mean_abs_shap": 0.001202325135580509
     },
     {
       "feature": "r3_intern",
-      "mean_abs_shap": 0.0005942087553907721
+      "mean_abs_shap": 0.0008417736856356955
     },
     {
-      "feature": "r1_intern",
-      "mean_abs_shap": 0.0004693524714549411
-    },
-    {
-      "feature": "r2_intern",
-      "mean_abs_shap": 0.0004338345326143141
+      "feature": "r2_tokens",
+      "mean_abs_shap": 0.0006527492944300634
     },
     {
       "feature": "r3_tokens",
-      "mean_abs_shap": 0.0002249649860888664
+      "mean_abs_shap": 0.00041057397002891273
+    },
+    {
+      "feature": "r1_intern",
+      "mean_abs_shap": 0.0003600997573561535
+    },
+    {
+      "feature": "r2_intern",
+      "mean_abs_shap": 0.0003362734269297663
     }
   ],
   "tipping_points": {
     "intern_appearances_wr": {
       "0": 100.0,
       "1": 100.0,
-      "2": 98.80270692347736,
-      "3": 91.72069825436408,
-      "4": 61.29889859475883
+      "2": 98.64864864864865,
+      "3": 85.48672566371681,
+      "4": 47.507440476190474
     },
     "tier1_impact": {
-      "win": 56.079207920792086,
-      "loss": 42.494623655913976
+      "win": 48.401697312588404,
+      "loss": 41.935483870967744
     },
     "tier3_impact": {
-      "win": 77.38944365192582,
-      "loss": 32.44649518947575
+      "win": 70.31022510919476,
+      "loss": 29.374040285430404
     },
     "token_usage_wr": {
-      "0_3": 79.80157720681761,
-      "4_6": 51.417851845388704,
-      "7_plus": 40.58159722222222
+      "0_3": 76.74418604651163,
+      "4_6": 43.04864682573139,
+      "7_plus": 38.3171657528469
     }
   }
 }

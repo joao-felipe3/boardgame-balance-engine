@@ -266,6 +266,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -532,6 +533,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -823,6 +825,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.42,
@@ -1118,6 +1121,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.27,
@@ -1409,6 +1413,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.27,
@@ -1696,6 +1701,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.68,
@@ -1976,6 +1982,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.65,
@@ -2290,6 +2297,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -2561,6 +2569,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -2852,6 +2861,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -3152,6 +3162,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.05,
@@ -3452,6 +3463,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.05,
@@ -3765,6 +3777,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -4034,6 +4047,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -4333,6 +4347,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -4623,6 +4638,7 @@
             "tokens": 3
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.25,
@@ -4928,6 +4944,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.67,
@@ -5239,6 +5256,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -5508,6 +5526,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -5797,6 +5816,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -6096,6 +6116,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.2,
@@ -6175,9 +6196,9 @@
       1,
       2
     ],
-    "final_winner": "Banqueiro",
-    "final_score": "4 x 0",
-    "total_rounds": 4,
+    "final_winner": "Estagiario",
+    "final_score": "3 x 4",
+    "total_rounds": 7,
     "rounds": [
       {
         "round_num": 1,
@@ -6403,6 +6424,7 @@
             "tokens": 0
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.4,
@@ -6672,6 +6694,7 @@
             "tokens": 1
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -6961,6 +6984,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.35,
@@ -7083,9 +7107,9 @@
             "tokens_spent": 0,
             "cards": [
               {
-                "type": "TI",
-                "name": "Titanio (+3)",
-                "base": 3
+                "type": "TOXIC",
+                "name": "Ativo Toxico (-4)",
+                "base": -4
               }
             ]
           },
@@ -7103,16 +7127,12 @@
           }
         ],
         "total_tokens_spent": 3,
-        "total_value": 14,
-        "has_req": true,
-        "is_success": true,
-        "banker_score": 4,
-        "intern_score": 0,
-        "credits_awarded": [
-          0,
-          1,
-          3
-        ],
+        "total_value": 7,
+        "has_req": false,
+        "is_success": false,
+        "banker_score": 3,
+        "intern_score": 1,
+        "credits_awarded": [],
         "hands_before": {
           "0": {
             "cards": [
@@ -7255,6 +7275,7 @@
             "tokens": 2
           }
         },
+        "directive": null,
         "suspicions": {
           "avg": {
             "0": 0.2,
@@ -7287,9 +7308,873 @@
             }
           },
           "known_traitors": {
-            "0": [],
+            "0": [
+              1
+            ],
             "3": [],
             "4": []
+          }
+        }
+      },
+      {
+        "round_num": 5,
+        "contract": {
+          "name": "Megaconsorcio Industrial",
+          "tier": 5,
+          "target": 10,
+          "req_commodity": "Titanio (+3)",
+          "req_count": 2,
+          "committee_size": 4,
+          "cost_per_player": 1
+        },
+        "chair_id": 4,
+        "committee": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "promised_supplier": [
+          4,
+          2
+        ],
+        "declarations": {
+          "0": {
+            "claims_req": false,
+            "claimed_val": 1,
+            "tokens_offered": 0,
+            "prefers_bench": true,
+            "offered_desc": "CO(1pts)"
+          },
+          "1": {
+            "claims_req": true,
+            "claimed_val": 4,
+            "tokens_offered": 1,
+            "prefers_bench": false,
+            "offered_desc": "TI(4pts)"
+          },
+          "2": {
+            "claims_req": true,
+            "claimed_val": 5,
+            "tokens_offered": 2,
+            "prefers_bench": false,
+            "offered_desc": "TI(5pts)"
+          },
+          "3": {
+            "claims_req": false,
+            "claimed_val": 1,
+            "tokens_offered": 0,
+            "prefers_bench": true,
+            "offered_desc": "CO(1pts)"
+          },
+          "4": {
+            "claims_req": true,
+            "claimed_val": 7,
+            "tokens_offered": 3,
+            "prefers_bench": false,
+            "offered_desc": "SF(4pts) [+3🪙]"
+          }
+        },
+        "votes": {
+          "0": false,
+          "1": true,
+          "2": true,
+          "3": true,
+          "4": true
+        },
+        "submitted": [
+          {
+            "player_id": 4,
+            "is_req_responsible": true,
+            "tokens_spent": 3,
+            "cards": [
+              {
+                "type": "WILD",
+                "name": "Ouro Liquido (+4 / Coringa)",
+                "base": 4
+              }
+            ]
+          },
+          {
+            "player_id": 2,
+            "is_req_responsible": true,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          },
+          {
+            "player_id": 0,
+            "is_req_responsible": false,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          },
+          {
+            "player_id": 1,
+            "is_req_responsible": false,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          }
+        ],
+        "total_tokens_spent": 3,
+        "total_value": 10,
+        "has_req": false,
+        "is_success": false,
+        "banker_score": 3,
+        "intern_score": 2,
+        "credits_awarded": [],
+        "hands_before": {
+          "0": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "TOXIC",
+                "name": "Ativo Toxico (-4)",
+                "base": -4
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 0
+          },
+          "1": {
+            "cards": [
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 1
+          },
+          "2": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ],
+            "tokens": 2
+          },
+          "3": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 0
+          },
+          "4": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "SF",
+                "name": "Safira (+4)",
+                "base": 4
+              },
+              {
+                "type": "WILD",
+                "name": "Ouro Liquido (+4 / Coringa)",
+                "base": 4
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 3
+          }
+        },
+        "directive": null,
+        "suspicions": {
+          "avg": {
+            "0": 0.45,
+            "1": 0.63,
+            "2": 0.32,
+            "3": 0.6,
+            "4": 0.22
+          },
+          "by_banker": {
+            "0": {
+              "0": 0.0,
+              "1": 1.0,
+              "2": 0.32,
+              "3": 0.6,
+              "4": 0.22
+            },
+            "3": {
+              "0": 0.45,
+              "1": 0.45,
+              "2": 0.32,
+              "3": 0.0,
+              "4": 0.22
+            },
+            "4": {
+              "0": 0.45,
+              "1": 0.45,
+              "2": 0.32,
+              "3": 0.6,
+              "4": 0.0
+            }
+          },
+          "known_traitors": {
+            "0": [
+              1
+            ],
+            "3": [],
+            "4": [
+              2
+            ]
+          }
+        }
+      },
+      {
+        "round_num": 6,
+        "contract": {
+          "name": "Consorcio Safira",
+          "tier": 6,
+          "target": 14,
+          "req_commodity": "Safira (+4)",
+          "req_count": 2,
+          "committee_size": 3,
+          "cost_per_player": 2
+        },
+        "chair_id": 0,
+        "committee": [
+          0,
+          2,
+          4
+        ],
+        "promised_supplier": [
+          4,
+          2
+        ],
+        "declarations": {
+          "0": {
+            "claims_req": false,
+            "claimed_val": 1,
+            "tokens_offered": 0,
+            "prefers_bench": true,
+            "offered_desc": "CO(1pts)"
+          },
+          "1": {
+            "claims_req": false,
+            "claimed_val": 6,
+            "tokens_offered": 1,
+            "prefers_bench": false,
+            "offered_desc": "Liquidez Calculada(~4pts)"
+          },
+          "2": {
+            "claims_req": true,
+            "claimed_val": 8,
+            "tokens_offered": 2,
+            "prefers_bench": false,
+            "offered_desc": "SF(4pts)"
+          },
+          "3": {
+            "claims_req": false,
+            "claimed_val": 4,
+            "tokens_offered": 1,
+            "prefers_bench": true,
+            "offered_desc": "VN(2pts) + CO(1pts) [+1🪙]"
+          },
+          "4": {
+            "claims_req": true,
+            "claimed_val": 6,
+            "tokens_offered": 0,
+            "prefers_bench": false,
+            "offered_desc": "SF(4pts) + VN(2pts)"
+          }
+        },
+        "votes": {
+          "0": true,
+          "1": true,
+          "2": true,
+          "3": false,
+          "4": false
+        },
+        "submitted": [
+          {
+            "player_id": 4,
+            "is_req_responsible": true,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "SF",
+                "name": "Safira (+4)",
+                "base": 4
+              }
+            ]
+          },
+          {
+            "player_id": 2,
+            "is_req_responsible": true,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          },
+          {
+            "player_id": 0,
+            "is_req_responsible": false,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "TOXIC",
+                "name": "Ativo Toxico (-4)",
+                "base": -4
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          }
+        ],
+        "total_tokens_spent": 0,
+        "total_value": 5,
+        "has_req": false,
+        "is_success": false,
+        "banker_score": 3,
+        "intern_score": 3,
+        "credits_awarded": [],
+        "hands_before": {
+          "0": {
+            "cards": [
+              {
+                "type": "TOXIC",
+                "name": "Ativo Toxico (-4)",
+                "base": -4
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 0
+          },
+          "1": {
+            "cards": [
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ],
+            "tokens": 1
+          },
+          "2": {
+            "cards": [
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ],
+            "tokens": 2
+          },
+          "3": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ],
+            "tokens": 1
+          },
+          "4": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "SF",
+                "name": "Safira (+4)",
+                "base": 4
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 0
+          }
+        },
+        "directive": null,
+        "suspicions": {
+          "avg": {
+            "0": 0.6,
+            "1": 0.73,
+            "2": 0.65,
+            "3": 0.57,
+            "4": 0.37
+          },
+          "by_banker": {
+            "0": {
+              "0": 0.0,
+              "1": 1.0,
+              "2": 0.47,
+              "3": 0.57,
+              "4": 0.37
+            },
+            "3": {
+              "0": 0.6,
+              "1": 0.6,
+              "2": 0.47,
+              "3": 0.0,
+              "4": 0.37
+            },
+            "4": {
+              "0": 0.6,
+              "1": 0.6,
+              "2": 1.0,
+              "3": 0.57,
+              "4": 0.0
+            }
+          },
+          "known_traitors": {
+            "0": [
+              1
+            ],
+            "3": [],
+            "4": [
+              2
+            ]
+          }
+        }
+      },
+      {
+        "round_num": 7,
+        "contract": {
+          "name": "Fundo Soberano Madagascar",
+          "tier": 7,
+          "target": 16,
+          "req_commodity": "Titanio (+3)",
+          "req_count": 2,
+          "committee_size": 3,
+          "cost_per_player": 2
+        },
+        "chair_id": 4,
+        "committee": [
+          1,
+          2,
+          3
+        ],
+        "promised_supplier": [
+          1,
+          2
+        ],
+        "declarations": {
+          "0": {
+            "claims_req": false,
+            "claimed_val": 0,
+            "tokens_offered": 0,
+            "prefers_bench": true,
+            "offered_desc": "Liquidez Baixa"
+          },
+          "1": {
+            "claims_req": true,
+            "claimed_val": 7,
+            "tokens_offered": 2,
+            "prefers_bench": false,
+            "offered_desc": "TI(5pts)"
+          },
+          "2": {
+            "claims_req": true,
+            "claimed_val": 8,
+            "tokens_offered": 2,
+            "prefers_bench": false,
+            "offered_desc": "TI(5pts)"
+          },
+          "3": {
+            "claims_req": true,
+            "claimed_val": 7,
+            "tokens_offered": 2,
+            "prefers_bench": false,
+            "offered_desc": "TI(3pts) + VN(2pts) [+2🪙]"
+          },
+          "4": {
+            "claims_req": false,
+            "claimed_val": 3,
+            "tokens_offered": 0,
+            "prefers_bench": true,
+            "offered_desc": "VN(2pts) + CO(1pts)"
+          }
+        },
+        "votes": {
+          "0": false,
+          "1": true,
+          "2": false,
+          "3": false,
+          "4": false
+        },
+        "submitted": [
+          {
+            "player_id": 1,
+            "is_req_responsible": true,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ]
+          },
+          {
+            "player_id": 2,
+            "is_req_responsible": true,
+            "tokens_spent": 0,
+            "cards": [
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ]
+          },
+          {
+            "player_id": 3,
+            "is_req_responsible": false,
+            "tokens_spent": 2,
+            "cards": [
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              }
+            ]
+          }
+        ],
+        "total_tokens_spent": 2,
+        "total_value": 13,
+        "has_req": false,
+        "is_success": false,
+        "banker_score": 3,
+        "intern_score": 4,
+        "credits_awarded": [],
+        "hands_before": {
+          "0": {
+            "cards": [],
+            "tokens": 0
+          },
+          "1": {
+            "cards": [
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 2
+          },
+          "2": {
+            "cards": [
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              }
+            ],
+            "tokens": 2
+          },
+          "3": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "TI",
+                "name": "Titanio (+3)",
+                "base": 3
+              }
+            ],
+            "tokens": 2
+          },
+          "4": {
+            "cards": [
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              },
+              {
+                "type": "VN",
+                "name": "Baunilha (+2)",
+                "base": 2
+              },
+              {
+                "type": "CO",
+                "name": "Cobalto (+1)",
+                "base": 1
+              }
+            ],
+            "tokens": 0
+          }
+        },
+        "directive": null,
+        "suspicions": {
+          "avg": {
+            "0": 0.85,
+            "1": 0.7,
+            "2": 0.81,
+            "3": 0.54,
+            "4": 0.62
+          },
+          "by_banker": {
+            "0": {
+              "0": 0.0,
+              "1": 0.97,
+              "2": 0.72,
+              "3": 0.54,
+              "4": 0.62
+            },
+            "3": {
+              "0": 0.85,
+              "1": 0.57,
+              "2": 0.72,
+              "3": 0.0,
+              "4": 0.62
+            },
+            "4": {
+              "0": 0.85,
+              "1": 0.57,
+              "2": 1.0,
+              "3": 0.54,
+              "4": 0.0
+            }
+          },
+          "known_traitors": {
+            "0": [
+              1
+            ],
+            "3": [],
+            "4": [
+              2
+            ]
           }
         }
       }

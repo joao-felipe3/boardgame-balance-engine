@@ -26,8 +26,10 @@ def main():
     parser.add_argument("--nash", "--game-theory", action="store_true", help="Executar Motor de Teoria dos Jogos & Equilíbrio de Nash")
     parser.add_argument("--stress", action="store_true", help="Executar Teste de Estresse Econômico & Choques de Liquidez")
     parser.add_argument("--entropy", "--info", action="store_true", help="Executar Análise de Teoria da Informação & Entropia de Shannon")
+    parser.add_argument("--dlc", "--events", action="store_true", help="Executar Avaliação da DLC de Diretrizes Regulatórias & Poderes Corporativos")
+    parser.add_argument("--dlc-mode", type=str, default="DICE_50", help="Regime da DLC (ALWAYS, DICE_50, MIDGAME, CATCHUP)")
     parser.add_argument("--dashboard", action="store_true", help="Gerar traces e atualizar visualizador HTML")
-    parser.add_argument("--all", action="store_true", help="Executar suíte analítica completa (sim, benchmark, causal, markov, nash, stress, entropy) e atualizar dashboard")
+    parser.add_argument("--all", action="store_true", help="Executar suíte analítica completa (sim, benchmark, causal, markov, nash, stress, entropy, dlc) e atualizar dashboard")
 
     args = parser.parse_args()
 
@@ -67,20 +69,25 @@ def main():
         run_game_theory_analysis(export_json="visualizer/data/game_theory_summary.json")
         run_stress_test(n_games_per_scenario=1000, num_workers=args.workers, export_json="visualizer/data/economic_stress_summary.json")
         run_information_analysis(n_games=2000, num_workers=args.workers, export_json="visualizer/data/information_entropy_summary.json")
+        from simulations.analyze_dlc_events import run_dlc_analysis
+        run_dlc_analysis(n_games_per_regime=1000, num_workers=args.workers, export_json="visualizer/data/dlc_events_summary.json")
         generate_trace_dataset("visualizer/data/game_traces.json")
         generate_dashboard()
         return
 
     special_action = any([args.benchmark, args.causal, args.markov, args.nash, args.stress, args.entropy, args.dashboard])
 
-    if args.sim is not None and not special_action:
+    # Se --sim for grande (ex: 30.000) e --dlc for passado, roda o Monte Carlo massivo com DLC ativada
+    if args.sim is not None and not special_action and not (args.dlc and args.sim <= 5000):
         from simulations.run_monte_carlo import run_monte_carlo
         run_monte_carlo(
             args.sim,
             num_workers=args.workers,
             export_json=args.export,
             banker_profile=args.banker_profile,
-            intern_profile=args.intern_profile
+            intern_profile=args.intern_profile,
+            enable_directives=args.dlc,
+            directive_regime=args.dlc_mode
         )
 
     if args.benchmark:
@@ -115,6 +122,12 @@ def main():
         n_games = args.sim if args.sim is not None else 3000
         export_p = args.export or "visualizer/data/information_entropy_summary.json"
         run_information_analysis(n_games=n_games, num_workers=args.workers, export_json=export_p)
+
+    if args.dlc:
+        from simulations.analyze_dlc_events import run_dlc_analysis
+        n_games = args.sim if args.sim is not None else 2000
+        export_p = args.export or "visualizer/data/dlc_events_summary.json"
+        run_dlc_analysis(n_games_per_regime=n_games, num_workers=args.workers, export_json=export_p)
 
     if args.dashboard:
         from src.btg.tracer import generate_trace_dataset

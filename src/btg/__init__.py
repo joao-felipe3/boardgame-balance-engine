@@ -21,6 +21,13 @@ from .engine import (
     coordinate_committee_contributions,
     simulate_single_match
 )
+from .events import (
+    DirectiveCategory,
+    DirectiveTriggerRegime,
+    DirectiveCard,
+    DirectivesDeck,
+    DIRECTIVES_CATALOG
+)
 
 __all__ = [
     'CardType',
@@ -38,5 +45,10 @@ __all__ = [
     'evaluate_contract_outcome',
     'choose_optimal_committee',
     'coordinate_committee_contributions',
-    'simulate_single_match'
+    'simulate_single_match',
+    'DirectiveCategory',
+    'DirectiveTriggerRegime',
+    'DirectiveCard',
+    'DirectivesDeck',
+    'DIRECTIVES_CATALOG'
 ]

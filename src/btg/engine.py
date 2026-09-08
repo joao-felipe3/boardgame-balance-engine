@@ -12,6 +12,7 @@ from typing import List, Dict, Tuple, Optional, Union
 from .constants import CardType, Role, InternProfile, BankerProfile, ContractSpec, SEVEN_TIERS_CATALOG
 from .deck import ResourceCard, DeckManager
 from .player import PlayerAI, PlayerDeclaration
+from .events import DirectivesDeck, DirectiveTriggerRegime, DirectiveCard
 
 
 def evaluate_contract_outcome(
@@ -37,15 +38,20 @@ def choose_optimal_committee(
     players: List[PlayerAI],
     contract: ContractSpec,
     declarations: Dict[int, PlayerDeclaration],
-    conflict_pairs: Optional[List[set]] = None
+    conflict_pairs: Optional[List[set]] = None,
+    quarantined_pid: Optional[int] = None
 ) -> Tuple[List[int], Optional[int]]:
     """O Chairman seleciona o comitê ótimo priorizando menor suspeita média."""
     c_size = contract.committee_size
-    clean_pids = [p.id for p in players if p.id not in chair.known_traitors and chair.suspicions[p.id] < 0.60]
+    valid_players = [p for p in players if p.id != quarantined_pid]
+    if len(valid_players) < c_size:
+        valid_players = players
+
+    clean_pids = [p.id for p in valid_players if p.id not in chair.known_traitors and chair.suspicions[p.id] < 0.60]
     if len(clean_pids) < c_size:
-        clean_pids = [p.id for p in players if p.id not in chair.known_traitors]
+        clean_pids = [p.id for p in valid_players if p.id not in chair.known_traitors]
     if len(clean_pids) < c_size:
-        clean_pids = [p.id for p in players]
+        clean_pids = [p.id for p in valid_players]
 
     all_comms = list(itertools.combinations(clean_pids, c_size))
     # Regra de Resistance (Sugestão C): Nunca colocar 2 membros do mesmo par de conflito juntos
@@ -277,11 +283,21 @@ def simulate_single_match(
     seed: Optional[int] = None,
     record_trace: bool = False,
     banker_profile: Union[BankerProfile, str] = BankerProfile.BALANCED,
-    intern_profile: Optional[Union[InternProfile, str]] = None
+    intern_profile: Optional[Union[InternProfile, str]] = None,
+    enable_directives: bool = False,
+    directive_regime: Union[DirectiveTriggerRegime, str] = DirectiveTriggerRegime.DICE_50
 ) -> Dict:
-    """Executa uma partida completa de BTG Madagascar v14.0 com suporte a múltiplos perfis."""
+    """Executa uma partida completa de BTG Madagascar v14.0 com suporte a múltiplos perfis e DLC de Diretrizes."""
     rng = random.Random(seed if seed is not None else (int(time.time() * 1000) ^ game_idx))
     
+    if isinstance(directive_regime, str):
+        try:
+            directive_regime = DirectiveTriggerRegime[directive_regime.upper()]
+        except KeyError:
+            directive_regime = DirectiveTriggerRegime.DICE_50
+    directives_deck = DirectivesDeck(rng=rng) if enable_directives else None
+    last_round_success: Optional[bool] = None
+
     roles = [Role.BANKER] * 3 + [Role.INTERN] * 2
     rng.shuffle(roles)
 
@@ -354,22 +370,68 @@ def simulate_single_match(
 
     for r_idx, contract in enumerate(ops):
         round_count += 1
+        active_directive: Optional[DirectiveCard] = None
+
+        if enable_directives and directives_deck is not None:
+            if directives_deck.should_trigger(round_count, directive_regime, last_round_success):
+                active_directive = directives_deck.draw()
+
+        c_size = contract.committee_size
+        target_val = contract.target_value
+        req_comm = contract.req_commodity
+        req_count = contract.req_commodity_count
 
         # Expansão condicional do comitê: Tier 5 expande para 4 membros se o Tier 3 OU Tier 4 falhou.
         tier5_should_expand = prev_tier3_failed or prev_tier4_failed
         if contract.expandable_on_prior_failure and tier5_should_expand and contract.expanded_committee_size > 0:
             r5_expanded = True
-            contract = ContractSpec(
-                name=contract.name,
-                tier=contract.tier,
-                committee_size=contract.expanded_committee_size,
-                cost_per_player=contract.cost_per_player,
-                target_value=contract.target_value,
-                req_commodity=contract.req_commodity,
-                req_commodity_count=contract.req_commodity_count,
-                expandable_on_prior_failure=contract.expandable_on_prior_failure,
-                expanded_committee_size=contract.expanded_committee_size,
-            )
+            c_size = contract.expanded_committee_size
+
+        # Modificadores de Diretrizes da DLC:
+        if active_directive is not None:
+            if active_directive.id == "COMITE_EXPANDIDO":
+                c_size = min(4, c_size + 1)
+            elif active_directive.id == "FORCA_TAREFA_ENXUTA":
+                c_size = max(2, c_size - 1)
+            elif active_directive.id == "SUBSIDIO_GOVERNAMENTAL":
+                target_val = max(3, target_val - 2)
+            elif active_directive.id == "CRISE_DE_OFERTA":
+                target_val = target_val + 2
+            elif active_directive.id == "SWAP_DE_COMMODITY":
+                req_comm = None
+            elif active_directive.id == "LEILAO_DE_BALCAO":
+                for p in players:
+                    p.hand.append(deck.draw_blind(1)[0])
+            elif active_directive.id == "REESTRUTURACAO_OFFSHORE":
+                for p in players:
+                    if len(p.hand) >= 2:
+                        weak_cards = [
+                            c for c in p.hand
+                            if (p.role == Role.BANKER and c.card_type != contract.req_commodity and c.card_type != CardType.SF) or
+                               (p.role == Role.INTERN and c.card_type != CardType.TOXIC)
+                        ]
+                        weak_cards.sort(key=lambda c: c.base_value)
+                        to_discard = weak_cards[:2]
+                        for c in to_discard:
+                            p.hand.remove(c)
+                            deck.discard([c])
+                        new_cards = deck.draw_blind(len(to_discard))
+                        p.hand.extend(new_cards)
+            elif active_directive.id == "LINHA_DE_CREDITO_SINDICAL":
+                for p in players:
+                    p.interest_tokens += 1
+
+        contract = ContractSpec(
+            name=contract.name,
+            tier=contract.tier,
+            committee_size=c_size,
+            cost_per_player=contract.cost_per_player,
+            target_value=target_val,
+            req_commodity=req_comm,
+            req_commodity_count=req_count,
+            expandable_on_prior_failure=contract.expandable_on_prior_failure,
+            expanded_committee_size=contract.expanded_committee_size,
+        )
 
         if record_trace:
             hands_before = {
@@ -392,6 +454,43 @@ def simulate_single_match(
             sus_avg = None
             sus_by_banker = None
 
+        # Inspeção de Carteira (Due Diligence) da DLC:
+        if active_directive and active_directive.id == "INSPECAO_DE_CARTEIRA":
+            chair_initial = players[curr_chair]
+            candidates = [p for p in players if p.id != chair_initial.id]
+            if candidates:
+                target_player = max(candidates, key=lambda p: chair_initial.suspicions[p.id])
+                if target_player.hand:
+                    valid_cards = [c for c in target_player.hand if c.card_type != CardType.TOXIC]
+                    if valid_cards:
+                        revealed_card = max(valid_cards, key=lambda c: (c.card_type in (CardType.SF, contract.req_commodity), c.base_value))
+                    else:
+                        revealed_card = target_player.hand[0]
+
+                    if revealed_card.card_type == CardType.TOXIC:
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                bp.suspicions[target_player.id] = 1.00
+                                bp.known_traitors.add(target_player.id)
+                    elif revealed_card.card_type in (CardType.SF, CardType.TI, contract.req_commodity) or revealed_card.base_value >= 3:
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                bp.suspicions[target_player.id] = max(0.05, bp.suspicions[target_player.id] - 0.30)
+
+        # Pacto de Acionistas (Aliança de Confiança) da DLC:
+        if active_directive and active_directive.id == "PACTO_DE_ACIONISTAS":
+            chair_initial = players[curr_chair]
+            candidates = [p for p in players if p.id != chair_initial.id]
+            if candidates:
+                partner = min(candidates, key=lambda p: abs(chair_initial.suspicions[p.id] - 0.35))
+                if partner.role == Role.BANKER:
+                    chair_initial.suspicions[partner.id] = max(0.05, chair_initial.suspicions[partner.id] - 0.40)
+                    partner.suspicions[chair_initial.id] = max(0.05, partner.suspicions[chair_initial.id] - 0.40)
+                else:
+                    valid_c = [c for c in partner.hand if c.card_type != CardType.TOXIC and c.base_value >= 3]
+                    if valid_c and rng.random() < 0.60:
+                        chair_initial.suspicions[partner.id] = max(0.15, chair_initial.suspicions[partner.id] - 0.25)
+
         consecutive_vetoes = 0
         approved_committee = None
         promised_supplier = None
@@ -402,8 +501,15 @@ def simulate_single_match(
             declarations = {p.id: p.make_public_declaration(contract, round_count) for p in players}
             all_declarations = declarations
 
+            # Quarentena Regulatória da DLC
+            quarantined_pid: Optional[int] = None
+            if active_directive and active_directive.id == "QUARENTENA_REGULATORIA":
+                c_pids = [p.id for p in players if p.id != chair.id]
+                quarantined_pid = max(c_pids, key=lambda pid: chair.suspicions[pid])
+
             chosen_comm, assigned_req_player = choose_optimal_committee(
-                chair, players, contract, declarations, conflict_pairs=conflict_pairs
+                chair, players, contract, declarations, conflict_pairs=conflict_pairs,
+                quarantined_pid=quarantined_pid
             )
 
             # Regra de alternância da R3 (50% testar par de conflito vs 50% testar banco)
@@ -435,7 +541,37 @@ def simulate_single_match(
                             continue
                 votes[p.id] = p.vote_on_proposal(curr_chair, chosen_comm, contract, round_count)
 
-            if sum(votes.values()) >= 3:
+            votes_for = sum(1 for v in votes.values() if v)
+            if active_directive and active_directive.id == "GOLDEN_SHARE" and votes.get(curr_chair, False):
+                votes_for += 1
+
+            threshold_required = 3
+            if active_directive:
+                if active_directive.id == "SUPERMAIORIA_EXIGIDA":
+                    threshold_required = 4
+                elif active_directive.id == "DECRETO_PRESIDENCIAL":
+                    threshold_required = 2
+
+            if votes_for >= threshold_required:
+                # Pedido de Vista (DLC): Qualquer operador com Token de Rendimento pessoal pode gastar 1 token
+                # para cancelar a proposta e passar o martelo sem queimar veto da mesa
+                pedido_de_vista_used = False
+                if active_directive and active_directive.id == "PEDIDO_DE_VISTA":
+                    for p in players:
+                        if p.id != curr_chair and p.interest_tokens >= 1:
+                            if p.role == Role.BANKER and any(p.suspicions[cid] >= 0.50 or cid in p.known_traitors for cid in chosen_comm):
+                                p.interest_tokens -= 1
+                                pedido_de_vista_used = True
+                                break
+                            elif p.role == Role.INTERN and all(players[cid].role == Role.BANKER for cid in chosen_comm) and rng.random() < 0.35:
+                                p.interest_tokens -= 1
+                                pedido_de_vista_used = True
+                                break
+
+                if pedido_de_vista_used:
+                    curr_chair = (curr_chair + 1) % 5
+                    continue
+
                 approved_committee = chosen_comm
                 promised_supplier = assigned_req_player
             else:
@@ -445,12 +581,9 @@ def simulate_single_match(
         total_vetoes += consecutive_vetoes
         if approved_committee is None:
             forced_committees += 1
-            # Resolução forçada: aplica os mesmos critérios de viabilidade do caminho normal.
-            # O Chairman original é descartado — todos os jogadores são candidatos.
             all_comms = list(itertools.combinations(range(5), contract.committee_size))
 
             def _forced_score(cm):
-                # 1º: preferir comitês com cobertura do insumo obrigatório
                 supplier_count = 0
                 if contract.req_commodity is not None and all_declarations:
                     supplier_count = sum(
@@ -461,13 +594,10 @@ def simulate_single_match(
                     contract.req_commodity is None or
                     supplier_count >= contract.req_commodity_count
                 )
-                # 2º: evitar membros que declararam preferir o banco
-                # (mão vazia ou apenas cartas tóxicas — inclui Banqueiros esgotados)
                 bench_in_comm = sum(
                     1 for pid in cm
                     if all_declarations.get(pid) and all_declarations[pid].prefers_bench
                 )
-                # 3º: menor suspeita total agregada pelos banqueiros
                 total_sus = sum(
                     sum(p.suspicions[cid] for p in players if p.role == Role.BANKER)
                     for cid in cm
@@ -477,7 +607,6 @@ def simulate_single_match(
             best_comm = min(all_comms, key=_forced_score)
             approved_committee = list(best_comm)
 
-            # Atribuir fornecedor prometido mesmo em resolução forçada
             if contract.req_commodity is not None and all_declarations:
                 forced_suppliers = [
                     pid for pid in approved_committee
@@ -508,7 +637,6 @@ def simulate_single_match(
                 if p.role == Role.BANKER:
                     preferred = None
                     if getattr(p, 'profile', None) == BankerProfile.STRATEGIST:
-                        # Estrategista foca em Safira e Wild, depois insumo do contrato e Titânio
                         for ct in [CardType.SF, CardType.WILD, contract.req_commodity, CardType.TI]:
                             if ct is not None and ct in deck.open_market:
                                 preferred = ct
@@ -533,12 +661,33 @@ def simulate_single_match(
             comm_objs, contract, round_count, promised_supplier, all_declarations, banker_score, intern_score=intern_score
         )
 
+        has_toxic = any(c.card_type == CardType.TOXIC for c in submitted_cards)
+
+        # Seguro Contra Sinistro da DLC: apólice cobre e descarta o ativo tóxico antes da apuração
+        if active_directive and active_directive.id == "SEGURO_CONTRA_SINISTRO" and has_toxic:
+            submitted_cards = [c for c in submitted_cards if c.card_type != CardType.TOXIC]
+
         deck.discard(submitted_cards)
         is_pure_bankers = all(p.role == Role.BANKER for p in comm_objs)
         is_success, total_val, has_req = evaluate_contract_outcome(submitted_cards, total_tokens_spent, contract, is_pure_banker_committee=is_pure_bankers)
 
+        # Chamada de Margem da DLC: Se falhou estritamente por insumo e há tokens para cobrir
+        if active_directive and active_directive.id == "CHAMADA_DE_MARGEM" and not is_success and not has_req:
+            if total_val >= contract.target_value:
+                available_tokens = sum(p.interest_tokens for p in players if p.role == Role.BANKER)
+                if available_tokens >= 2:
+                    needed = 2
+                    for p in players:
+                        if p.role == Role.BANKER and p.interest_tokens > 0:
+                            take = min(needed, p.interest_tokens)
+                            p.interest_tokens -= take
+                            needed -= take
+                            if needed == 0:
+                                break
+                    has_req = True
+                    is_success = True
+
         # Telemetria do resultado desta rodada
-        has_toxic = any(c.card_type == CardType.TOXIC for c in submitted_cards)
         interns_in_comm = [pid for pid in approved_committee if players[pid].role == Role.INTERN]
         if interns_in_comm:
             intern_comm_appearances += len(interns_in_comm)
@@ -567,6 +716,44 @@ def simulate_single_match(
             prev_tier4_failed = not is_success
         else:
             pass
+
+        last_round_success = is_success
+
+        # Efeitos de Compliance da DLC pós-resolução:
+        if active_directive:
+            chair_obj = players[curr_chair]
+            if active_directive.id == "AUDITORIA_CVM" and submitted_cards_data:
+                audited = rng.choice(submitted_cards_data)
+                a_pid = audited['player_id']
+                has_toxic_in_audited = any(c['type'] == CardType.TOXIC.name for c in audited['cards'])
+                if has_toxic_in_audited:
+                    for bp in players:
+                        if bp.role == Role.BANKER:
+                            bp.suspicions[a_pid] = 1.00
+                            bp.known_traitors.add(a_pid)
+                elif audited.get('is_req_responsible') and has_req:
+                    for bp in players:
+                        if bp.role == Role.BANKER:
+                            bp.suspicions[a_pid] = max(0.05, bp.suspicions[a_pid] - 0.25)
+            elif active_directive.id == "CONTABILIDADE_SEGREGADA" and submitted_cards_data:
+                c_candidates = [d for d in submitted_cards_data if d['player_id'] != chair_obj.id]
+                if c_candidates:
+                    audited = max(c_candidates, key=lambda d: chair_obj.suspicions[d['player_id']])
+                    a_pid = audited['player_id']
+                    has_toxic_in_audited = any(c['type'] == CardType.TOXIC.name for c in audited['cards'])
+                    if has_toxic_in_audited:
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                bp.suspicions[a_pid] = 1.00
+                                bp.known_traitors.add(a_pid)
+                    elif audited.get('is_req_responsible') and has_req:
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                bp.suspicions[a_pid] = max(0.05, bp.suspicions[a_pid] - 0.35)
+                    else:
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                bp.suspicions[a_pid] = max(0.05, bp.suspicions[a_pid] - 0.20)
 
         credits_awarded = []
         if is_success:
@@ -715,6 +902,11 @@ def simulate_single_match(
                 'intern_score': intern_score,
                 'credits_awarded': credits_awarded,
                 'hands_before': hands_before,
+                'directive': {
+                    'id': active_directive.id,
+                    'name': active_directive.name,
+                    'category': active_directive.category.value
+                } if active_directive else None,
                 'suspicions': {
                     'avg': sus_avg,
                     'by_banker': sus_by_banker,

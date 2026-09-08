@@ -11,7 +11,8 @@ simulations/
 ├── analyze_markov.py        # Resolvedor Analítico de Cadeias de Markov Absorventes
 ├── analyze_game_theory.py   # Teoria dos Jogos, Equilíbrio de Nash & Fictitious Play
 ├── stress_test_economy.py   # Teste de Estresse Econômico & Choques de Liquidez
-└── analyze_information.py   # Teoria da Informação & Entropia de Shannon (Fluxo Dedutivo)
+├── analyze_information.py   # Teoria da Informação & Entropia de Shannon (Fluxo Dedutivo)
+└── analyze_dlc_events.py    # Avaliação Atuarial da DLC (Diretrizes & Poderes)
 ```
 
 ---
@@ -119,6 +120,20 @@ python simulations/analyze_information.py --games 3000 --export visualizer/data/
 
 ---
 
+## 8. `analyze_dlc_events.py` — Avaliação Atuarial da DLC de Diretrizes & Poderes
+Mede o impacto e a volatilidade do baralho de **14 Cartas de Poder / Diretrizes Regulatórias** comparando o jogo base contra os 4 regimes de ativação:
+- **Regime 1: Sempre Ativo (R1–R7):** 1 carta revelada a cada rodada.
+- **Regime 2: Dado 1d6 (>=4 / 50% de chance):** Rola 1d6 no início de cada rodada (média de ~3 poderes por partida). ⭐ [Recomendado]
+- **Regime 3: Mid-Game Focus (R3–R5):** Ativa poderes apenas no clímax do meio de jogo.
+- **Regime 4: Catch-Up Pós-Derrota:** Ativa poderes apenas quando a rodada anterior foi reprovada (mecanismo anti-snowball).
+
+### Execução direta:
+```bash
+python simulations/analyze_dlc_events.py --games 2000 --export visualizer/data/dlc_events_summary.json
+```
+
+---
+
 ## 🚀 Como Executar via CLI Unificado (`run.py`)
 
 Todos os motores podem ser disparados a partir da raiz:
@@ -143,6 +158,9 @@ python run.py --stress
 
 # Executar análise de teoria da informação & entropia
 python run.py --entropy --sim 3000
+
+# Executar avaliação comparativa da DLC de poderes
+python run.py --dlc --sim 2000
 
 # Executar tudo em sequência e atualizar o visualizador HTML
 python run.py --all
