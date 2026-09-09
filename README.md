@@ -84,14 +84,29 @@ pip install -r requirements.txt
   python run.py --dlc --sim 2000
   ```
   *O que este módulo entrega:*
-  - **Catálogo de 14 Diretrizes Regulatórias:** Compliance, Economia, Governança e Estrutura de Comitê.
+  - **Catálogo de 17 Diretrizes Regulatórias:** Compliance, Economia, Governança e Estrutura de Comitê 100% analógicas e universais.
   - **Comparativo de 4 Regimes de Ativação:** Sempre Ativo (R1-R7) vs Dado 1d6 (50%) vs Mid-Game (R3-R5) vs Catch-Up pós-derrota.
-  - **Impacto Matemático no Balanceamento:** Demonstração de que a DLC preserva o equilíbrio nominal da v14.0 (+0.05 p.p. com dado 1d6 em 10.000 partidas).
+  - **Impacto Matemático no Balanceamento:** Demonstração de que a DLC com Dado 1d6 consolida o equilíbrio nominal em **48.97% Banco vs 51.03% Estagiários** em 30.000 partidas.
 
 * **Apenas Gerar Traces e Atualizar Visualizador HTML:**
   ```bash
   python run.py --dashboard
   ```
+
+---
+
+## 🏛️ Evolução do Jogo, Versões & Experimentos
+
+O **BTG Madagascar** é fruto de um extenso processo de engenharia de equilíbrio e game design iterativo apoiado em mais de **200.000 partidas simuladas** e cinco motores analíticos avançados:
+
+| Versão / Ciclo | Foco Principal | Inovações Introduzidas | Diagnóstico & Impacto Matemático |
+| :--- | :--- | :--- | :--- |
+| **v1.0 – v5.0**<br>*(Protótipos Iniciais)* | Dinâmica de Dedução Clássica | Regras estilo *The Resistance*, votação aberta e cartas genéricas de pontuação. | ❌ **Desequilíbrio Grave:** Estagiários venciam >72% dos jogos. Falta de plausibilidade negável material. |
+| **v6.0 – v9.0**<br>*(Economia & Balcão)* | Gestão de Commodities | Introdução dos 4 recursos (Cobalto +1, Baunilha +2, Titânio +3, Safira +4), Mercado de Balcão Aberto e Ativos Tóxicos (-4). | 📈 **Prêmio de Liquidez (+4.55 p.p.):** Compras públicas no balcão provaram proteger os honestos contra volatilidade e criar deniability legítima. |
+| **v10.0 – v12.0**<br>*(Mão & Banco)* | Depleção e Incentivos | Kit C assimétrico inicial, Dividendo Completo de Banco (+1 carta e +1 token para quem descansa) e Despertar do Sleeper na R2. | ⚖️ **Ruptura de Sweeps:** Sweeps 4x0 do Banco caíram de 31.3% para ~21%, tornando o jogo disputado até o fim. |
+| **v13.0**<br>*(Calibração dos Tiers)* | Balanceamento da Curva | Aperto de liquidez no Tier 2 (meta 5 pts), expansão dinâmica da R5 (3→4 membros sob falha) e resgate do clímax na R7. | 🔥 **Tensão Dramática:** Taxa de clímax na 7ª rodada (3x3) subiu para ~30% e vitórias épicas no Tier 7 foram resgatadas. |
+| **v14.0**<br>*(IA & Dedução)* | Agentes Heterogêneos & Ciência | 4 perfis de Banqueiro, 5 perfis de Estagiário (calibração do Técnico `E_TECHNICIAN`), inferência causal (Árvores/SHAP), Markov e Nash. | 🎯 **Padrão Ouro Calibrado:** 46.2% vs 53.8% sem DLC. Mapeamento matemático das regras causais e pontos de inflexão. |
+| **v14.1 / DLC**<br>*(Poderes Físicos)* | Variabilidade & Regulação | Baralho de 17 cartas de Diretrizes físicas universais (sem travas de tier) e ativação via Dado 1d6 ($\ge 4$). | ⭐ **Equilíbrio 48.97% / 51.03%:** Média de 2.87 cartas/jogo, eliminando a mão travada, o pânico do 3º veto e a paranoia fratricida. |
 
 ---
 
@@ -105,27 +120,33 @@ BTG/
 │       ├── deck.py          # Gestão do baralho e Mercado de Balcão Aberto
 │       ├── player.py        # Jogador, carteira, tokens e dedução bayesiana
 │       ├── engine.py        # Motor das rodadas, comitês, votações e avaliação
-│       ├── events.py        # Baralho de Diretrizes & Poderes da DLC
+│       ├── events.py        # Baralho de 17 Diretrizes & Poderes da DLC
 │       └── tracer.py        # Serializador de traces para o dashboard
 │
 ├── simulations/
-│   ├── run_monte_carlo.py     # Simulação estatística massiva
-│   ├── benchmark_profiles.py  # Comparador de performance de IA
+│   ├── run_monte_carlo.py     # Simulação estatística massiva (suporta --dlc)
+│   ├── benchmark_profiles.py  # Comparador de performance de IA (4x5)
 │   ├── analyze_causality.py   # Motor de inferência causal (Árvores, RF, SHAP)
 │   ├── analyze_markov.py      # Resolvedor analítico de Cadeias de Markov Absorventes
 │   ├── analyze_game_theory.py # Teoria dos Jogos, Equilíbrio de Nash & Fictitious Play
 │   ├── stress_test_economy.py # Teste de Estresse Econômico & Choques de Liquidez
 │   ├── analyze_information.py # Teoria da Informação & Entropia de Shannon
-│   └── analyze_dlc_events.py  # Avaliação Atuarial da DLC de Diretrizes & Poderes
+│   └── analyze_dlc_events.py  # Avaliação Atuarial da DLC (4 Regimes)
 │
 ├── visualizer/
 │   ├── create_dashboard.py  # Renderizador do visualizador interativo
 │   ├── match_visualizer.html # Dashboard visual standalone
 │   └── data/
-│       └── game_traces.json # Dados gravados das partidas
+│       ├── game_traces.json # Traces gravados das partidas
+│       ├── causal_analysis_summary.json
+│       ├── markov_chain_summary.json
+│       ├── game_theory_summary.json
+│       ├── economic_stress_summary.json
+│       ├── information_entropy_summary.json
+│       └── dlc_events_summary.json
 │
 ├── docs/
-│   └── manual_regras_v14.md # Manual de regras oficial consolidado
+│   └── manual_regras_v14.md # Manual de regras oficial consolidado + DLC + Changelog
 │
 ├── experiments/             # Laboratório de pesquisa e histórico de experimentos
 │   ├── README.md            # Índice e documentação das fases de pesquisa
@@ -136,6 +157,6 @@ BTG/
 │   └── legacy_prototypes/   # Protótipos monolíticos e utilitários históricos
 │
 ├── requirements.txt         # Dependências do projeto
-└── run.py                   # Ponto de entrada CLI
+└── run.py                   # Ponto de entrada CLI unificado
 ```
 

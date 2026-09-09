@@ -95,29 +95,123 @@ Todas as cartas e tokens entram no cofre virados para baixo. No momento da revel
 
 ## ⚖️ 6. Estatísticas de Balanceamento (Monte Carlo — 30.000 partidas oficiais)
 
-Resultados validados empiricamente sob a dinâmica de **Kit C**, **Opção 3 (Aperto de Liquidez no Tier 2)**, **Despertar do Sleeper na R2**, **Dividendo Completo de Banco** e **Catálogo Recalibrado**:
+Resultados validados empiricamente sob a dinâmica consolidada da **v14.0** com **Kit C**, **Opção 3 (Aperto de Liquidez no Tier 2)**, **Despertar do Sleeper na R2**, **Dividendo Completo de Banco**, **Mesas Heterogêneas (5 Perfis)** e **Catálogo Recalibrado**:
 
-| Métrica | Valor | Avaliação & Impacto no Jogo |
-|---|:---:|---|
-| **Win Rate Global Banqueiros** | **52.38%** (15.714 vitórias) | 🎯 Equilíbrio competitivo padrão ouro (gap de apenas 4.76 p.p.) |
-| **Win Rate Global Estagiários** | **47.62%** (14.286 vitórias) | 🎯 Ampla competitividade e chances equilibradas para ambos os lados |
-| **Taxa de 4x0 (Sweep Banqueiros)** | **21.64%** (6.493 vitórias) | 🛡️ **Redução de ~10 p.p.** (caiu de 31.31% para 21.64%, rompendo passeios automáticos) |
-| **Taxa de Clímax (Decisão na R7 — 3x4 / 4x3)** | **28.46%** (8.537 partidas) | 🔥 Altíssima tensão dramática: quase 30% das partidas vão até o último comitê! |
-| **Vitórias Épicas de Banqueiros na R7 (4x3)** | **6.56%** (1.967 jogos) | 🚀 Resgate histórico: aprovação de 23.0% no Tier 7 (1.967 de 8.537) |
-| **Placar Mais Frequente da Mesa** | **3 x 4 (21.90%)** | 🏆 O desfecho unitário mais comum é o clímax emocionante da 7ª rodada |
-| **Duração Média das Partidas** | **5.60 ± 1.11 rodadas** | ✅ Partidas longas, altamente disputadas e com envolvimento de toda a mesa |
-| **Massacre de Estagiários (0x4)** | **0.00%** (1 jogo em 30.000) | 💀 Virtualmente impossível de ocorrer na prática |
+| Métrica Global | Valor (Jogo Base v14.0) | Valor com DLC Ativa (Regime 1d6) | Avaliação & Impacto no Jogo |
+|---|:---:|:---:|---|
+| **Win Rate Global Banqueiros** | **46.20%** | **48.97%** | 🎯 Equilíbrio competitivo padrão ouro (gap de apenas 1.03 p.p.) |
+| **Win Rate Global Estagiários** | **53.80%** | **51.03%** | 🎯 Ampla competitividade e chances perfeitamente simétricas |
+| **Taxa de 4x0 (Sweep Banqueiros)** | **14.23%** | **14.57%** | 🛡️ Passeios automáticos eliminados em relação às versões iniciais (eram >31%) |
+| **Taxa de Clímax (Decisão na R7 — 3x4 / 4x3)** | **29.79%** | **30.72%** | 🔥 Altíssima tensão dramática: ~31% das partidas vão até o último comitê! |
+| **Placar Mais Frequente da Mesa** | **3 x 4 (27.66%)** | **3 x 4 (24.90%)** | 🏆 O desfecho unitário mais comum é o clímax emocionante da 7ª rodada |
+| **Duração Média das Partidas** | **5.75 ± 1.08 rodadas** | **5.75 ± 1.05 rodadas** | ✅ Partidas longas, altamente disputadas e com envolvimento de toda a mesa |
+| **Massacre de Estagiários (0x4)** | **1.17%** | **0.56%** | 💀 Virtualmente impossível de ocorrer na prática |
 
-### 🎭 Performance por Perfil de IA
-* **Perfil A — Agressivo / Blefe Imediato:** **55.11% Intern WR** (redução massiva em relação ao baseline de 72.84% e aos 60.87% anteriores, domesticado pelo Veto e Aperto do Tier 2).
-* **Perfil B — Sleeper / Infiltração Profunda:** **46.32% Intern WR** (perfil estratégico altamente imprevisível e balanceado com o Despertar na R2).
-* **Perfil C — Hedge / Retenção Econômica:** **41.43% Intern WR** (estratégia paciente que busca a explosão no mid/late game).
+### 🎭 Performance por Perfil de IA (5 Perfis de Estagiário vs 4 de Banqueiro)
+* **Perfil A — Agressivo / Blefe Imediato:** **53.61% Intern WR** (blefe agressivo inicial controlado pelo Veto e Aperto do Tier 2).
+* **Perfil B — Sleeper / Infiltração Profunda:** **50.59% Intern WR** (perfil altamente imprevisível equilibrado pelo Despertar na R2).
+* **Perfil C — Hedge / Retenção Econômica:** **42.45% Intern WR** (estratégia paciente de asfixia econômica de insumos).
+* **Perfil D — Oportunista / Camaleão Adaptativo:** **46.61% Intern WR** (reage dinamicamente ao placar da mesa em tempo real).
+* **Perfil E — Técnico / Falsa Idoneidade:** **48.69% Intern WR** (equilibra a entrega de commodities com sabotagens cirúrgicas de valor).
 
-### 📈 Taxa de Aprovação por Tier
-* **Tier 1:** 87.8% (26.333 de 30.000 tentativas)
-* **Tier 2:** 62.4% (18.721 de 30.000 tentativas — queda intencional pela Opção 3, bloqueando o lock-out)
-* **Tier 3:** 58.2% (17.468 de 30.000 tentativas — estabilização compensatória com meta 6)
-* **Tier 4:** 50.9% (15.264 de 30.000 tentativas)
-* **Tier 5:** 44.1% (10.355 de 23.506 tentativas)
-* **Tier 6:** 29.1% (4.670 de 16.050 tentativas)
-* **Tier 7:** 23.0% (1.967 de 8.537 tentativas — alta viabilidade no clímax final)
+### 📈 Funil de Aprovação por Tier (Taxas de Sucesso Empíricas)
+* **Tier 1 (Abertura Neutra):** 88.0% de sucesso (apenas 47% de infiltração permitida pela mesa).
+* **Tier 2 (Aperto de Liquidez - Opção 3):** 69.5% de sucesso (exige 5 pts, bloqueando lock-outs automáticos).
+* **Tier 3 (Primeiro Comitê de 3 Membros):** 48.2% de sucesso (estabilização compensatória via meta 6).
+* **Tier 4 (Filtro Crítico de Alavancagem):** 41.2% de sucesso (comitê exige 2x insumos nobres).
+* **Tier 5 (Megaconsórcio / Expansão Condicional):** 47.9% de sucesso (comitê expande para 4 membros sob falha prévia).
+* **Tier 6 (Complexos Pesados - 2 Cartas/Membro):** 38.9% de sucesso (6 cartas totais, premia estoque do banco).
+* **Tier 7 (Clímax - Holding Global):** 19.8% de sucesso (confronto decisivo no desempate de 3x3).
+
+---
+
+## 🏛️ 7. Módulo Oficial de Expansão (DLC: Diretrizes Regulatórias & Poderes Corporativos)
+
+A expansão de Diretrizes Regulatórias é um módulo opcional que introduz um baralho de **17 cartas de eventos físicos analógicos**, trazendo variabilidade dinâmica sem quebrar a espinha dorsal matemática do jogo base.
+
+### 7.1 Regra do Gatilho do Dado 1d6 (Regime Recomendado)
+Ao início de cada rodada (antes da escolha do Chairman e das declarações):
+* O Chairman rola **1 dado de 6 faces (1d6)**:
+  * **Resultado 1, 2 ou 3:** *Rodada Ordinária.* Nenhuma diretriz é ativada. A mesa joga sob as regras clássicas de dedução e governança.
+  * **Resultado 4, 5 ou 6:** *Diretriz Extraordinária Ativa!* O Chairman saca a carta do topo do Baralho de Diretrizes, lê em voz alta e aplica seu efeito.
+* **Impacto no Design:** Mantém média de **2.87 cartas por partida** (~3 eventos ao longo do jogo), criando suspense genuíno na rolagem inicial sem saturar a memória de trabalho dos jogadores.
+
+### 7.2 Catálogo Oficial das 17 Diretrizes Físicas de Mesa
+
+Todas as cartas são **100% universais** (podem ser jogadas em qualquer rodada) e operam com **componentes tangíveis** (cartas da mão, tokens de rendimento e gavetas de votação):
+
+| ID / Nome | Categoria | Mecânica Física de Mesa | Racional de Game Design |
+| :--- | :--- | :--- | :--- |
+| **`AUDITORIA_CVM`**<br>*(Due Diligence)* | Compliance | O Chairman inspeciona 1 carta física colocada no cofre após a resolução. | Dedução pontual de certeza física para o auditor leal. |
+| **`QUARENTENA_REGULATORIA`**<br>*(Suspensão Provisória)* | Compliance | O operador sob maior suspeita da mesa não pode ser escalado no comitê desta rodada. | Isolamento cautelar regimental de membros sob escrutínio. |
+| **`SEGURO_CONTRA_SINISTRO`**<br>*(Hedge Corporativo)* | Compliance | Se houver Ativo Tóxico no cofre revelado, a apólice anula e descarta o tóxico, avaliando apenas recursos válidos. | Cria o momento empolgante onde o sabotador é revelado, mas o contrato é salvo pela apólice. |
+| **`INSPECAO_DE_CARTEIRA`**<br>*(Auditoria de Balcão)* | Compliance | O Chairman aponta 1 operador, que deve escolher e revelar abertamente 1 carta física da mão para a mesa. | Permite a um jogador provar publicamente idoneidade com um insumo nobre. |
+| **`CONTABILIDADE_SEGREGADA`**<br>*(Auditoria Segmentada)* | Compliance | As cartas do comitê são postas em pilhas separadas por membro; o Chairman inspeciona a pilha de 1 membro antes de misturar ao cofre. | Neutraliza o escudo de anonimato em comitês expandidos de 4 membros (Tier 5). |
+| **`SUBSIDIO_GOVERNAMENTAL`**<br>*(Incentivo Fiscal)* | Economia | Reduz a meta de liquidez do contrato em -2 pontos (mínimo de 3 pts). | Alívio fiscal em rodadas de arrocho econômico. |
+| **`CRISE_DE_OFERTA`**<br>*(Choque Logístico)* | Economia | Aumenta a meta de liquidez do contrato em +2 pontos. | Choque de custo inflacionário que testa a reserva de tokens. |
+| **`SWAP_DE_COMMODITY`**<br>*(Arbitragem Pura)* | Economia | Cancela a cota de insumo obrigatório do contrato, avaliando apenas o valor numérico bruto. | Desbloqueia contratos quando há escassez de commodities no mercado. |
+| **`LEILAO_DE_BALCAO`**<br>*(Pregão Extraordinário)* | Economia | Todos os 5 operadores compram 1 carta adicional do topo do baralho fechado. | Injeção geral de liquidez nas mãos de todos os jogadores. |
+| **`REESTRUTURACAO_OFFSHORE`**<br>*(Swap de Portfólio)* | Economia | Antes da proposta, cada operador pode descartar até 2 cartas da mão e comprar 2 novas do topo. | Elimina o gargalo da "mão travada" do banqueiro sem exigir descanso no banco. |
+| **`CHAMADA_DE_MARGEM`**<br>*(Aporte Emergencial)* | Economia | Se falhar exclusivamente por falta de insumo, a mesa pode queimar 2 Tokens de Rendimento coletivos para suprir a cota. | Impede que o blefe da omissão de commodity cause derrotas irreversíveis. |
+| **`LINHA_DE_CREDITO_SINDICAL`**<br>*(Injeção Universal)* | Economia | Todos os 5 operadores recebem imediatamente +1 Token de Rendimento da reserva. | Reabastece o combustível econômico da mesa para contratos de alta demanda. |
+| **`GOLDEN_SHARE`**<br>*(Voto de Minerva)* | Governança | O voto do Chairman tem peso duplo (2 votos) na votação do comitê. | Prerrogativa presidencial de desempate estatutário. |
+| **`PEDIDO_DE_VISTA`**<br>*(Veto de Bancada)* | Governança | Qualquer operador pode descartar 1 Token pessoal para cancelar a proposta sem queimar veto da mesa. | Evita o pânico do 3º veto e a queda no comitê forçado aleatório. |
+| **`PACTO_DE_ACIONISTAS`**<br>*(Aliança de Confiança)* | Governança | O Chairman e mais 1 operador mostram secretamente 1 carta da mão um ao outro e a devolvem. | Quebra a paranoia fratricida entre banqueiros honestos (evita a Regra #6). |
+| **`SUPERMAIORIA_EXIGIDA`**<br>*(Cláusula Pétrea)* | Governança | O comitê exige 4 votos favoráveis (em vez de 3) para ser aprovado. | Exige consenso de 80% do conselho para operações de alto risco. |
+| **`DECRETO_PRESIDENCIAL`**<br>*(Gabinete de Crise)* | Governança | O Chairman aprova o comitê com apenas 2 votos favoráveis, superando vetos da oposição. | Permite aprovar comitês de confiança mesmo contra a sabotagem de dissidentes. |
+| **`COMITE_EXPANDIDO`**<br>*(Auditor Adjunto)* | Operações | Aumenta o tamanho do comitê em +1 membro (máximo de 4). | Adiciona mais mãos para cumprir metas pesadas de pontuação. |
+| **`FORCA_TAREFA_ENXUTA`**<br>*(Operação Sigilosa)* | Operações | Reduz o tamanho do comitê em -1 membro (mínimo de 2). | Restringe o acesso à chave do cofre, reduzindo a chance de infiltração. |
+
+---
+
+## 📜 8. Histórico de Versões, Experimentos & Evolução do Game Design (v1.0 à v14.0)
+
+A trajetória de desenvolvimento do **BTG Madagascar** baseou-se em ciclos iterativos de modelagem matemática, experimentos controlados e simulações estocásticas de larga escala:
+
+### 🔹 Fase 1: v1.0 – v5.0 (A Gênese & Síndrome de The Resistance)
+* **Estrutura Original:** Regras inspiradas diretamente em jogos de dedução clássicos (*The Resistance / Avalon*), com cartas abstratas de Sucesso/Falha e contagem estática de pontos.
+* **Diagnóstico de Falha:**
+  * **Win Rate de Estagiários > 72%:** Os traidores venciam com facilidade explorando a fragilidade dedutiva da mesa.
+  * **Falta de Plausibilidade Negável Material:** Sem commodities ou economia, qualquer falha no cofre permitia isolar culpados de forma trivial ou meramente barulhenta.
+  * **Efeito Bola de Neve (Snowball):** O Banco entrava em paralisia após o primeiro revés, sem mecanismos econômicos de recuperação.
+
+### 🔹 Fase 2: v6.0 – v9.0 (A Economia de Commodities & O Mercado de Balcão)
+* **Inovações Introduzidas:**
+  * Criação das 4 commodities temáticas: Cobalto (+1), Baunilha (+2), Titânio (+3), Safira (+4) e Coringa (+4).
+  * Criação do **Mercado de Balcão Aberto (3 cartas visíveis)**: Introduziu a decisão estratégica entre compras públicas (sinalização transparente de honestidade) e compras fechadas (anonimato tático). O teste de estresse provou que o balcão confere um **Prêmio de Liquidez de +4.55 p.p.** ao Banco.
+  * **Créditos de Sucesso:** Criação de incentivos positivos para o Estagiário participar de missões honestas visando acumular Ativos Tóxicos (-4).
+
+### 🔹 Fase 3: v10.0 – v12.0 (Depleção Econômica, Kit C e Dividendo de Banco)
+* **Experimentos de Mão Inicial:**
+  * *Kit A (Aleatório):* Dispersão de sorte inaceitável.
+  * *Kit B (Simétrico Total):* Todos sabiam o que o outro tinha, eliminando o blefe inicial.
+  * *Kit C (Estruturado Asimétrico):* **1 Cobalto, 1 Titânio, 2 cartas do topo.** A Baunilha não garantida gerou o atrito de abertura perfeito.
+* **Dividendo Completo de Banco (Bench Dividends):**
+  * Operadores fora do comitê passaram a receber **+1 carta e +1 Token de Rendimento** (+1 ponto direto de liquidez). Isso transformou os jogadores do banco no motor de sustentação econômica dos Tiers tardios.
+* **O Despertar do Sleeper na R2:**
+  * Ao detectar liderança de 1x0 do Banco, o estagiário Sleeper na R2 ganhou 50% de chance de ativação. Reduziu os sweeps automáticos de 4x0 de **31.31% para ~21%**.
+
+### 🔹 Fase 4: v13.0 (Calibração Atuarial dos 7 Tiers de Operação)
+* **Aperto de Liquidez no Tier 2 (Opção 3):** Elevação da meta para 5 pts, impedindo que dois jogadores esgotados da R1 passassem automaticamente com 1+3=4 sem queimar tokens ou usar o banco fresco.
+* **Expansão Dinâmica da R5:** Comitês de 3 membros que expandem para 4 sob falha prévia nos Tiers 3 ou 4, equilibrando a dificuldade do meio de jogo.
+* **Revolução do Clímax na R7:** Reestruturação das Holdings Globais (metas de 15 e 16 pts com cotas de metal e gemas), resgatando a taxa de vitórias épicas no Tier 7 de 0% para 23%.
+
+### 🔹 Fase 5: v14.0 (Modelagem Avançada de IA & Dedução Estocástica)
+* **Diversidade de Agentes:** Formalização dos 4 perfis de Banqueiro (`BALANCED`, `CONSERVATIVE`, `PRAGMATIC`, `STRATEGIST`) e 5 perfis de Estagiário (`A_AGGRESSIVE`, `B_SLEEPER`, `C_HEDGE`, `D_OPPORTUNIST`, `E_TECHNICIAN`).
+* **Correção do Técnico (`E_TECHNICIAN`):** Calibração do arquétipo que antes ajudava involuntariamente o Banco, integrando blefes de insumo a partir da R3 e normalizando seu WR para 48–52%.
+* **Suíte Analítica Multidimensional:** Integração dos 5 motores matemáticos avançados:
+  * *Árvores Causais & SHAP* (descoberta da Regra #6 e do impacto de 6.3x do Tier 3).
+  * *Cadeias de Markov Absorventes* (matriz exata de viradas e elasticidades sistêmicas).
+  * *Teoria dos Jogos & Nash* (blefe ótimo de 19.4% no Tier 1 e dinâmicas de Minimax).
+  * *Testes de Estresse Econômico* (análise de ruína sob seca de commodities e contágio tóxico).
+  * *Teoria da Informação & Entropia de Shannon* (rastreamento do decaimento da incerteza de 2.585 para 1.77 bits).
+
+### 🔹 Fase 6: v14.1 (A Expansão Analógica & Resolução de Gargalos via DLC)
+* **Desenvolvimento do Baralho de 17 Diretrizes:** Substituição de mecânicas programáticas por componentes analógicos físicos (revelação aberta, gavetas separadas e queima de tokens).
+* **Eliminação de Travas por Tier:** Garantia de que todas as 17 cartas sejam universais e jogáveis em qualquer rodada.
+* **Resolução Cirúrgica de Brechas:**
+  * `PACTO_DE_ACIONISTAS` dissolve a paranoia fratricida.
+  * `REESTRUTURACAO_OFFSHORE` elimina a mão travada.
+  * `CHAMADA_DE_MARGEM` e `LINHA_DE_CREDITO_SINDICAL` asseguram liquidez nos Tiers 6 e 7.
+  * `CONTABILIDADE_SEGREGADA` neutraliza o anonimato do comitê de 4 membros.
+* **Resultado:** Equilíbrio histórico validado em 30.000 partidas com **48.97% Banco vs 51.03% Estagiários** sob o regime de Dado 1d6.

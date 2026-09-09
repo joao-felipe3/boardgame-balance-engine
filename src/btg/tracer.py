@@ -24,11 +24,11 @@ def generate_trace_dataset(
             'technician': 202020
         }
 
-    g1 = simulate_single_match(101, InternProfile.B_SLEEPER, seed=seeds['sleeper'], record_trace=True)
-    g2 = simulate_single_match(202, InternProfile.A_AGGRESSIVE, seed=seeds['aggressive'], record_trace=True)
-    g3 = simulate_single_match(303, InternProfile.C_HEDGE, seed=seeds['hedge'], record_trace=True)
-    g4 = simulate_single_match(404, InternProfile.D_OPPORTUNIST, seed=seeds['opportunist'], record_trace=True)
-    g5 = simulate_single_match(505, InternProfile.E_TECHNICIAN, seed=seeds['technician'], record_trace=True)
+    g1 = simulate_single_match(101, InternProfile.B_SLEEPER, seed=seeds['sleeper'], record_trace=True, enable_directives=True, directive_regime='DICE_50')
+    g2 = simulate_single_match(202, InternProfile.A_AGGRESSIVE, seed=seeds['aggressive'], record_trace=True, enable_directives=True, directive_regime='DICE_50')
+    g3 = simulate_single_match(303, InternProfile.C_HEDGE, seed=seeds['hedge'], record_trace=True, enable_directives=True, directive_regime='DICE_50')
+    g4 = simulate_single_match(404, InternProfile.D_OPPORTUNIST, seed=seeds['opportunist'], record_trace=True, enable_directives=True, directive_regime='DICE_50')
+    g5 = simulate_single_match(505, InternProfile.E_TECHNICIAN, seed=seeds['technician'], record_trace=True, enable_directives=True, directive_regime='DICE_50')
 
     def format_trace(g, prof, seed):
         players_meta = g['players_metadata']
