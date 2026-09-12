@@ -11,6 +11,25 @@
 
 ## 💼 2. A Economia Base de Recursos & Gestão de Carteira
 
+### 🔹 Composição do Baralho Comercial de Recursos (60 Cartas)
+O jogo utiliza um baralho central de **60 cartas de commodities e ativos**, calibrado no motor matemático de equilíbrio para sustentar as 7 rodadas de expansão:
+
+| Carta / Commodity | Símbolo | Valor no Cofre | Quantidade no Baralho | Função Estratégica & Disponibilidade |
+| :--- | :---: | :---: | :---: | :--- |
+| **Cobalto** | `CO` | **+1** | **22 cartas** | Commodity básica de alta liquidez. Garante volume de pontuação e atende cotas de mineração e logística. |
+| **Baunilha** | `VN` | **+2** | **18 cartas** | Commodity agrícola intermediária. Não é garantida na largada (Kit C), gerando demanda e atrito no Balcão desde a R1. |
+| **Titânio** | `TI` | **+3** | **10 cartas** | Metal industrial nobre. Essencial para atingir as metas elevadas dos Tiers 3, 4 e 5 (*Sindicato de Titânio* e *Megaconsórcio*). |
+| **Safira** | `SF` | **+4** | **6 cartas** | Gema de alto valor. Escassa e estratégica para fechar os contratos pesados dos Tiers 6 e 7 (*Holding Global*). |
+| **Ouro Líquido (Coringa / Wild)** | `WILD` | **+4** | **2 cartas** *(+ reserva)* | Ativo supremo do Banco: vale +4 pontos e substitui qualquer commodity exigida. *(Obtido também via Créditos de Sucesso).* |
+| **Ativo Tóxico** | `TOXIC` | **−4** | **2 cartas** *(+ reserva)* | Arma de sabotagem dos Estagiários: drena 4 pontos do cofre na apuração. *(Acumulado também via Créditos de Sucesso).* |
+| **Total do Baralho Oficial** | — | — | **60 cartas** | Baralho central de compras e sustentação do Mercado de Balcão. |
+
+> **Setup do Baralho & Mesa Inicial:**
+> 1. Cada um dos 5 jogadores recebe sua mão do **Kit C** (1x Cobalto e 1x Titânio entregues abertamente + 2 cartas secretas compradas do topo do baralho).
+> 2. Abrem-se **3 cartas** do topo para formar a vitrine do **Mercado de Balcão Aberto**.
+> 3. O restante do baralho forma a pilha de compra fechada. Sempre que o monte esvaziar, o descarte é reembaralhado.
+> 4. As cartas extras de Ouro Líquido e Ativo Tóxico formam a **Reserva do Banco / Estoque Especial**, sacadas quando jogadores atingem 2 Créditos de Sucesso.
+
 ### 🔹 Carteira Inicial Estruturada (Kit C)
 Para eliminar a disparidade da sorte sem trivializar as cotas iniciais, todo operador inicia o jogo com uma carteira balanceada e sutilmente assimétrica:
 * **1x Cobalto (+1)**

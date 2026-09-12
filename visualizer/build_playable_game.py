@@ -639,17 +639,54 @@ def build_game_html():
     // ===================================================
     // DADOS DO SISTEMA E MOTOR JOGÁVEL
     // ===================================================
-    const contractsList = [
-      { tier: 1, name: "Exportação de Baunilha de Sava", target: 4, req_commodity: "Baunilha (+2)", req_count: 1, committee_size: 2, cost: 1, region: "Sava" },
-      { tier: 2, name: "Lavra de Cobalto em Analanjirofo", target: 5, req_commodity: "Cobalto (+1)", req_count: 1, committee_size: 2, cost: 1, region: "Analanjirofo" },
-      { tier: 3, name: "Sindicato de Titânio de Atsinanana", target: 6, req_commodity: "Titânio (+3)", req_count: 1, committee_size: 3, cost: 1, region: "Atsinanana" },
-      { tier: 4, name: "Safiras de Ilakaka & Alaotra", target: 7, req_commodity: "Safira (+4)", req_count: 1, committee_size: 3, cost: 1, region: "Alaotra-Mangoro" },
-      { tier: 5, name: "Fundo Soberano de Analamanga", target: 8, req_commodity: "Baunilha (+2)", req_count: 2, committee_size: 3, cost: 1, region: "Analamanga" },
-      { tier: 6, name: "Consórcio Florestal de Menabe", target: 9, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 4, cost: 1, region: "Menabe" },
-      { tier: 7, name: "Grande Leilão de Gemas de Ihorombe", target: 11, req_commodity: "Safira (+4)", req_count: 2, committee_size: 4, cost: 1, region: "Ihorombe" }
-    ];
+    // ===================================================
+    // CATÁLOGO OFICIAL DUPLO DE CONTRATOS REGIONAIS (MANUAL v14 & CONSTANTS.PY)
+    // Cada Tier (1 a 7) possui 2 opções calibradas de contratos.
+    // A cada partida, uma trilha de 7 contratos é sorteada dinamicamente (128 combinações).
+    // ===================================================
+    const SEVEN_TIERS_CATALOG = {
+      1: [
+        { tier: 1, name: "Arbitragem Simples de Sava", target: 3, req_commodity: null, req_count: 0, committee_size: 2, cost: 1, region: "Sava", desc: "Abertura justa sem exigência de commodity. Foco em cooperação inicial." },
+        { tier: 1, name: "Exportação de Baunilha de Sava", target: 4, req_commodity: "Baunilha (+2)", req_count: 1, committee_size: 2, cost: 1, region: "Sava", desc: "Teste de mercado: cota de 1x Baunilha (+2) com meta de 4 pontos." }
+      ],
+      2: [
+        { tier: 2, name: "Mineração de Cobalto em Analanjirofo", target: 5, req_commodity: "Cobalto (+1)", req_count: 1, committee_size: 2, cost: 1, region: "Analanjirofo", desc: "Aperto de liquidez: cota de 1x Cobalto (+1) com meta de 5 pontos." },
+        { tier: 2, name: "Lote Agrícola de Analanjirofo", target: 5, req_commodity: "Baunilha (+2)", req_count: 1, committee_size: 2, cost: 1, region: "Analanjirofo", desc: "Demanda nobre: cota de 1x Baunilha (+2) com meta de 5 pontos." }
+      ],
+      3: [
+        { tier: 3, name: "Sindicato de Titânio de Atsinanana", target: 6, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 3, cost: 1, region: "Atsinanana", desc: "Industrial: primeiro comitê de 3 membros exigindo 2x Titânio (+3), meta 6 pts." },
+        { tier: 3, name: "Logística Portuária de Atsinanana", target: 6, req_commodity: "Cobalto (+1)", req_count: 2, committee_size: 3, cost: 1, region: "Atsinanana", desc: "Escoamento acessível: comitê de 3 membros exigindo 2x Cobalto (+1), meta 6 pts." }
+      ],
+      4: [
+        { tier: 4, name: "Refino Metalúrgico de Toamasina", target: 7, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 3, cost: 1, region: "Toamasina", desc: "Filtro equilibrado: comitê de 3 membros exigindo 2x Titânio (+3), meta 7 pts." },
+        { tier: 4, name: "Consórcio Agro-Industrial de Toamasina", target: 8, req_commodity: "Baunilha (+2)", req_count: 2, committee_size: 3, cost: 1, region: "Toamasina", desc: "Demanda comercial: comitê de 3 membros exigindo 2x Baunilha (+2), meta 8 pts." }
+      ],
+      5: [
+        { tier: 5, name: "Megaconsórcio Industrial de Analamanga", target: 10, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 3, cost: 1, region: "Analamanga", expandable: true, desc: "Crise estratégica: 3 ops (expande para 4 se T3/T4 falhou), 2x Titânio, meta 10 pts." },
+        { tier: 5, name: "Cofre de Commodities de Analamanga", target: 10, req_commodity: "Baunilha (+2)", req_count: 2, committee_size: 3, cost: 1, region: "Analamanga", expandable: true, desc: "Reserva de valor: 3 ops (expande para 4 se T3/T4 falhou), 2x Baunilha, meta 10 pts." }
+      ],
+      6: [
+        { tier: 6, name: "Complexo Greenfield de Menabe", target: 13, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 3, cost: 2, region: "Menabe", desc: "Fase pesada: 3 ops depositando 2 cartas cada (6 cartas totais), 2x Titânio, meta 13 pts." },
+        { tier: 6, name: "Consórcio Safira de Menabe", target: 14, req_commodity: "Safira (+4)", req_count: 2, committee_size: 3, cost: 2, region: "Menabe", desc: "Mercado de gemas nobres: 3 ops x 2 cartas cada, 2x Safira (+4), meta 14 pts." }
+      ],
+      7: [
+        { tier: 7, name: "Holding Global BTG (Clímax de Ihorombe)", target: 15, req_commodity: "Safira (+4)", req_count: 1, committee_size: 3, cost: 2, region: "Ihorombe", desc: "Clímax financeiro: 3 ops x 2 cartas cada, 1x Safira (+4), meta 15 pts." },
+        { tier: 7, name: "Fundo Soberano de Madagascar", target: 16, req_commodity: "Titânio (+3)", req_count: 2, committee_size: 3, cost: 2, region: "Ihorombe", desc: "Clímax industrial: 3 ops x 2 cartas cada, 2x Titânio (+3), meta 16 pts." }
+      ]
+    };
 
-    // Catálogo e Baralho Comercial Oficial (60 Cartas conforme Constants.py e Manual v14)
+    function generateContractsForMatch() {
+      let selected = [];
+      for (let t = 1; t <= 7; t++) {
+        const options = SEVEN_TIERS_CATALOG[t];
+        const chosen = options[Math.floor(Math.random() * options.length)];
+        selected.push(JSON.parse(JSON.stringify(chosen)));
+      }
+      return selected;
+    }
+
+    let contractsList = generateContractsForMatch();
+
     const INITIAL_DECK_DEF = [
       { type: "CO", name: "Cobalto (+1)", base: 1, count: 22 },
       { type: "VN", name: "Baunilha (+2)", base: 2, count: 18 },
@@ -668,19 +705,29 @@ def build_game_html():
       { type: "TOXIC", name: "Ativo Tóxico (-4)", base: -4 }
     ];
 
+    // Catálogo Oficial com as 19 Diretivas Regulatórias do Manual v14 (§7.1)
     const dlcDirectives = [
-      { id: "AUDITORIA_CVM", name: "Auditoria CVM (Due Diligence)", cat: "Compliance", desc: "O Chairman inspeciona 1 carta colocada no cofre após a resolução." },
-      { id: "QUARENTENA_REGULATORIA", name: "Quarentena Regulatória", cat: "Compliance", desc: "O operador sob maior suspeita da mesa não pode ser escalado no comitê desta rodada." },
-      { id: "SEGURO_CONTRA_SINISTRO", name: "Seguro Contra Sinistro (Hedge)", cat: "Compliance", desc: "Se houver Ativo Tóxico no cofre revelado, a apólice anula e descarta o tóxico!" },
+      { id: "AUDITORIA_CVM", name: "Auditoria CVM (Due Diligence)", cat: "Compliance", desc: "O Chairman inspeciona 1 carta física depositada no cofre após a resolução da missão." },
+      { id: "QUARENTENA_REGULATORIA", name: "Quarentena Regulatória (Suspensão)", cat: "Compliance", desc: "O operador sob maior suspeita da mesa não pode ser escalado no comitê desta rodada." },
+      { id: "SEGURO_CONTRA_SINISTRO", name: "Seguro Contra Sinistro (Hedge)", cat: "Compliance", desc: "Se houver Ativo Tóxico no cofre revelado, a apólice anula e neutraliza o primeiro tóxico!" },
+      { id: "INSPECAO_DE_CARTEIRA", name: "Inspeção de Carteira (Auditoria de Balcão)", cat: "Compliance", desc: "O Chairman inspeciona 1 carta física da mão do operador mais suspeito da mesa." },
+      { id: "CONTABILIDADE_SEGREGADA", name: "Contabilidade Segregada", cat: "Compliance", desc: "Auditoria nominal: cada membro do comitê deposita suas cartas abertas para checagem." },
       { id: "SUBSIDIO_GOVERNAMENTAL", name: "Subsídio Governamental (Incentivo)", cat: "Economia", desc: "Reduz a meta de liquidez do contrato em -2 pontos (mínimo de 3 pts)." },
       { id: "CRISE_DE_OFERTA", name: "Crise de Oferta (Choque Logístico)", cat: "Economia", desc: "Aumenta a meta de liquidez do contrato em +2 pontos." },
       { id: "SWAP_DE_COMMODITY", name: "Swap de Commodity (Arbitragem)", cat: "Economia", desc: "Cancela a cota de insumo obrigatório do contrato nesta rodada!" },
-      { id: "LINHA_DE_CREDITO_SINDICAL", name: "Linha de Crédito Sindical", cat: "Economia", desc: "Todos os 5 operadores recebem imediatamente +1 Token de Ariary." },
-      { id: "GOLDEN_SHARE", name: "Golden Share (Voto de Minerva)", cat: "Governança", desc: "O voto do Chairman tem peso duplo (2 votos) na votação do comitê." },
-      { id: "COMITE_EXPANDIDO", name: "Comitê Interdepartamental (+1 Membro)", cat: "Operações", desc: "Aumenta o tamanho do comitê em +1 membro nesta rodada." }
+      { id: "LEILAO_DE_BALCAO", name: "Leilão de Balcão (Pregão Extraordinário)", cat: "Economia", desc: "Todos os 5 operadores compram 1 carta adicional do topo do baralho fechado." },
+      { id: "REESTRUTURACAO_OFFSHORE", name: "Reestruturação Offshore", cat: "Economia", desc: "Operadores reciclam sua mão substituindo ativos fracos por novas compras do monte." },
+      { id: "CHAMADA_DE_MARGEM", name: "Chamada de Margem (Aporte Emergencial)", cat: "Economia", desc: "Cada membro escalado no comitê queima obrigatoriamente 1 moeda de Ariary se possuir." },
+      { id: "LINHA_DE_CREDITO_SINDICAL", name: "Linha de Crédito Sindical", cat: "Economia", desc: "Todos os 5 operadores recebem imediatamente +1 Token de Ariary da reserva." },
+      { id: "GOLDEN_SHARE", name: "Golden Share (Voto de Minerva)", cat: "Governança", desc: "O voto do Chairman tem peso duplo (+1 voto SIM extra) na aprovação do comitê." },
+      { id: "PEDIDO_DE_VISTA", name: "Pedido de Vista (Veto de Bancada)", cat: "Governança", desc: "Auditoria preventiva: comitê só avança se obtiver ao menos 4 votos favoráveis." },
+      { id: "PACTO_DE_ACIONISTAS", name: "Pacto de Acionistas (Aliança)", cat: "Governança", desc: "Aliança de confiança que reduz a paranoia e reforça a coordenação entre banqueiros." },
+      { id: "SUPERMAIORIA_EXIGIDA", name: "Supermaioria Exigida (Cláusula Pétrea)", cat: "Governança", desc: "O comitê exige 4 votos favoráveis (em vez de 3) para ser aprovado." },
+      { id: "DECRETO_PRESIDENCIAL", name: "Decreto Presidencial (Gabinete de Crise)", cat: "Governança", desc: "O Chairman aprova o comitê com apenas 2 votos favoráveis da mesa." },
+      { id: "COMITE_EXPANDIDO", name: "Comitê Interdepartamental (+1 Membro)", cat: "Operações", desc: "Aumenta o tamanho do comitê em +1 membro nesta rodada." },
+      { id: "FORCA_TAREFA_ENXUTA", name: "Força-Tarefa Enxuta (-1 Membro)", cat: "Operações", desc: "Reduz o tamanho do comitê em -1 membro nesta rodada (mínimo de 2 membros)." }
     ];
 
-    // Personagens Duolingo com traços visuais, falas e expressões
     const characters = [
       {
         id: 0,
@@ -745,23 +792,23 @@ def build_game_html():
       {
         id: 3,
         name: "Tovo",
-        title: "Estagiário de Mesa",
-        duoClass: "intern",
-        color: "#dc2626",
-        skin: "#fbcfe8",
-        hair: "#ea580c",
-        shirt: "#e11d48",
-        expression: "sweating", // Gota de suor animada quando sob pressão!
-        bubbleText: "E aí, chefe! Pode contar comigo, vou dar o meu melhor aqui na mesa!",
+        title: "Operador de Derivativos",
+        duoClass: "trader",
+        color: "#7c3aed",
+        skin: "#fbd38d",
+        hair: "#2b180d",
+        shirt: "#6d28d9",
+        expression: "confident",
+        bubbleText: "Pronto para cobrir posições de balcão e garantir as ordens do banco!",
         voiceLines: {
-          pointsHigh: "Com certeza vou colocar +3 ou +4 pontos na urna! Pode confiar... 😅",
-          pointsLow: "Poxa, só sobrou carta baixinha na minha mão, foi mal aí!",
-          commodityYes: "Acho que tenho o insumo sim! Vou botar lá dentro com certeza!",
-          commodityNo: "Não tenho o insumo não, chefe! Deixa com o outro operador!",
-          ariaryBurn: "Vou queimar moeda sim, tudo pelo time! 🪙",
-          ariaryNone: "Tô sem moedas de Ariary, gastei no café da firma...",
-          loyaltyLoyal: "Eu quero ser efetivado! Jamais sabotaria uma operação do banco!",
-          loyaltyTraitor: "Eu? Sabotar?! Jamais! Olha minha carinha de bom moço... 😅💦"
+          pointsHigh: "Posso garantir uma boa injeção de liquidez nesta rodada!",
+          pointsLow: "Minha carteira está defensiva, entrego o suporte básico contratual.",
+          commodityYes: "Tenho a remessa de insumo disponível e pronta para embarque.",
+          commodityNo: "Não tenho esse insumo no meu portfólio, apenas liquidez.",
+          ariaryBurn: "Posso queimar moeda de Ariary para garantir a margem de aprovação.",
+          ariaryNone: "Não vejo necessidade de gastar moedas agora.",
+          loyaltyLoyal: "Sou leal à mesa de governança, conte com meu voto favorável!",
+          loyaltyTraitor: "Estou focado em resultados rápidos para a mesa... Pode confiar."
         }
       },
       {
@@ -810,6 +857,15 @@ def build_game_html():
         3: { 0: 0.50, 1: 0.50, 2: 0.50, 3: 1.0, 4: 0.50 },
         4: { 0: 0.20, 1: 0.40, 2: 0.40, 3: 0.40, 4: 0.0 }
       },
+      // Mecânicas Oficiais do Manual v14:
+      successCredits: { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 }, // Cada 2 comitês aprovados = 1 carta da reserva
+      specialReserve: { WILD: 4, TOXIC: 4 }, // Reserva especial separada do baralho de compras
+      prevTier3Failed: false, // Expansão condicional do Tier 5 se T3 ou T4 falharem
+      prevTier4Failed: false,
+      quarantinePlayerId: null, // Operador suspenso por Quarentena Regulatória
+      inspectedPlayerCard: null, // Carta revelada pela Inspeção de Carteira
+      revealedCvmCard: null, // Carta auditada pela CVM no cofre
+
       stage: 'SETUP', // SETUP, DICE_ROLL, PROPOSAL, DELIBERATION, VOTING, DEPOSIT, REVEAL, BENCH_DIVIDEND, GAME_OVER
       proposedCommittee: [],
       designatedSupplier: null,
@@ -825,12 +881,52 @@ def build_game_html():
       diceState: { rolling: false, rolled: false, value: 1 }
     };
 
-    let userRolePreference = 'Banqueiro';
+    // Funções Auxiliares de Regras Dinâmicas (Comitê Expandido e Perfis de Sabotagem)
+    function getEffectiveCommitteeSize(contract) {
+      let size = contract.committee_size;
+      // Regra Manual v14 §3: Tier 5 expande para 4 membros se o Tier 3 ou Tier 4 falhou
+      if (contract.tier === 5 && (gameState.prevTier3Failed || gameState.prevTier4Failed)) {
+        size = 4;
+      }
+      // Diretivas DLC
+      if (gameState.roundDirective) {
+        if (gameState.roundDirective.id === "COMITE_EXPANDIDO") size += 1;
+        else if (gameState.roundDirective.id === "FORCA_TAREFA_ENXUTA") size = Math.max(2, size - 1);
+      }
+      return Math.min(5, Math.max(2, size));
+    }
 
-    // ===================================================
-    // GERENCIAMENTO DE BARALHO & MERCADO DE BALCÃO ABERTO
-    // ===================================================
-    function createShuffledDeck() {
+    function getEffectiveTarget(contract) {
+      let target = contract.target;
+      if (gameState.roundDirective) {
+        if (gameState.roundDirective.id === "SUBSIDIO_GOVERNAMENTAL") target = Math.max(3, target - 2);
+        else if (gameState.roundDirective.id === "CRISE_DE_OFERTA") target += 2;
+      }
+      return target;
+    }
+
+    function shouldBotSabotage(botId, roundNum, bankerScore) {
+      const profileEl = document.getElementById('bot-profile-select');
+      const profile = profileEl ? profileEl.value : 'balanced';
+
+      if (profile === 'sleeper') {
+        // Sleeper (Manual §8): Passivo em R1 para construir reputação; só arrisca R2 se banqueiro pontuou; R3+ ativo
+        if (roundNum === 1) return false;
+        if (roundNum === 2) return (bankerScore >= 1 && Math.random() < 0.50);
+        return Math.random() < 0.85;
+      } else if (profile === 'aggressive') {
+        // Agressivo: Busca sabotar com intensidade máxima desde a primeira oportunidade
+        return Math.random() < 0.90;
+      } else {
+        // Equilibrado (IA Bayesiana v14 Padrão): R1 ponderado (60%), R2+ escala com os pontos do conselho
+        if (roundNum === 1) return Math.random() < 0.60;
+        if (bankerScore >= 2) return Math.random() < 0.90;
+        return Math.random() < 0.75;
+      }
+    }
+
+    let userRolePreference = 'Banqueiro';
+function createShuffledDeck() {
       let deck = [];
       INITIAL_DECK_DEF.forEach(item => {
         for (let i = 0; i < item.count; i++) {
@@ -916,6 +1012,14 @@ def build_game_html():
       else if (num >= 65) gameState.humanDeductions[targetId] = 'traitor';
       else gameState.humanDeductions[targetId] = 'neutral';
 
+      // Sincronização IMEDIATA do Dossiê do Auditor com todos os Banqueiros Leais da mesa
+      for (let bId = 1; bId <= 4; bId++) {
+        if (gameState.roles[bId] === 'Banqueiro') {
+          if (!gameState.botSuspicions[bId]) gameState.botSuspicions[bId] = {};
+          gameState.botSuspicions[bId][targetId] = num / 100;
+        }
+      }
+
       renderDuolingoRoster();
     }
 
@@ -985,7 +1089,7 @@ def build_game_html():
       const chairId = gameState.chairId;
       if (chairId !== 0) {
         const chairChar = characters[chairId];
-        const needed = contract.committee_size;
+        const needed = getEffectiveCommitteeSize(contract);
 
         if (type === 'none' && gameState.proposedCommittee.includes(0)) {
           // Jogador avisou que não tem o insumo: bot presidente substitui o jogador por outro membro
@@ -1180,6 +1284,7 @@ def build_game_html():
                 📜 Missão da Rodada:
               </span>
               <h3 class="font-cartoon text-xl md:text-2xl font-bold text-[#2b180d]">${contract.name}</h3>
+              <span class="text-[10px] bg-[#fef3c7] text-[#78350f] px-2 py-0.5 rounded-full border border-[#b45309] font-cartoon font-bold">Opção de Trilha do Manual v14</span>
             </div>
             <span class="stamp-approved px-3.5 py-1 rounded-full text-xs">${stageBadgeText}</span>
           </div>
@@ -1200,7 +1305,7 @@ def build_game_html():
             <div class="bg-white p-2.5 rounded-xl border-2 border-[#2b180d] shadow-sm">
               <div class="text-[10px] font-cartoon text-[#8c4314] uppercase font-bold">👥 Quórum de Comitê</div>
               <div class="font-cartoon font-bold text-xs text-[#2b180d] mt-1">
-                ${contract.committee_size} Membros
+                ${getEffectiveCommitteeSize(contract)} Membros ${contract.tier === 5 && (gameState.prevTier3Failed || gameState.prevTier4Failed) ? '<span class="text-[9px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded border border-rose-400">Expandido (T3/T4)</span>' : ''}
               </div>
             </div>
             <div class="bg-white p-2.5 rounded-xl border-2 border-[#2b180d] shadow-sm">
@@ -1292,11 +1397,14 @@ def build_game_html():
           <rect x="55" y="38" width="22" height="18" rx="6" fill="none" stroke="#1e293b" stroke-width="3" />
           <line x1="45" y1="46" x2="55" y2="46" stroke="#1e293b" stroke-width="3" />
         `;
-      } else if (char.duoClass === 'intern') {
-        // Boné virado para trás
+      } else if (char.duoClass === 'trader') {
+        // Headset moderno de mesa de operações
         accessorySvg = `
-          <path d="M18 36 Q50 12 82 36 Q86 38 88 44 Q50 36 12 44 Z" fill="#ea580c" stroke="#2b180d" stroke-width="3" />
-          <circle cx="50" cy="18" r="4" fill="#fde047" stroke="#2b180d" stroke-width="2" />
+          <path d="M26 44 C26 22 74 22 74 44" stroke="#1e293b" stroke-width="3" fill="none" />
+          <rect x="22" y="40" width="8" height="14" rx="3" fill="#334155" stroke="#2b180d" stroke-width="2" />
+          <rect x="70" y="40" width="8" height="14" rx="3" fill="#334155" stroke="#2b180d" stroke-width="2" />
+          <path d="M26 50 Q36 62 46 60" stroke="#1e293b" stroke-width="2.5" fill="none" />
+          <circle cx="48" cy="60" r="3" fill="#f59e0b" stroke="#2b180d" stroke-width="1.5" />
         `;
       } else if (char.duoClass === 'safari') {
         // Chapéu de safári e bigodinho
@@ -1383,6 +1491,8 @@ def build_game_html():
         setupPanel.classList.add('hidden');
       }
 
+      // Sorteia uma nova trilha oficial de contratos entre as opções do manual v14
+      contractsList = generateContractsForMatch();
       gameState.roundNum = 1;
       gameState.bankerScore = 0;
       gameState.internScore = 0;
@@ -1392,8 +1502,15 @@ def build_game_html():
       gameState.humanCoinsSpent = 0;
       gameState.userPromiseDeclared = false;
       gameState.promises = {};
+      gameState.successCredits = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+      gameState.specialReserve = { WILD: 4, TOXIC: 4 };
+      gameState.prevTier3Failed = false;
+      gameState.prevTier4Failed = false;
+      gameState.quarantinePlayerId = null;
+      gameState.inspectedPlayerCard = null;
+      gameState.revealedCvmCard = null;
 
-      // Atribuição de papéis (3 Banqueiros, 2 Estagiários)
+      // Atribuição de papéis (3 Banqueiros, 2 Estagiários no total da mesa)
       let humanRole = userRolePreference;
       if (humanRole === 'Random') {
         humanRole = Math.random() < 0.6 ? 'Banqueiro' : 'Estagiario';
@@ -1401,17 +1518,47 @@ def build_game_html():
 
       gameState.roles[0] = humanRole;
 
-      // Restante dos 4 bots: se humano for Banqueiro, bots tem 2 Banqueiros e 2 Estagiários.
-      // Se humano for Estagiário, bots tem 3 Banqueiros e 1 Estagiário.
+      // Restante dos 4 bots:
+      // Se humano for Banqueiro: restam 2 Banqueiros e 2 Estagiários entre os bots (ids 1, 2, 3, 4)
+      // Se humano for Estagiário: restam 3 Banqueiros e 1 Estagiário entre os bots
       let botRoles = humanRole === 'Banqueiro' 
         ? ['Banqueiro', 'Banqueiro', 'Estagiario', 'Estagiario']
         : ['Banqueiro', 'Banqueiro', 'Banqueiro', 'Estagiario'];
       
-      // Embaralhar papéis dos bots
-      botRoles.sort(() => Math.random() - 0.5);
+      // Embaralhamento Fisher-Yates estritamente uniforme (sem viés)
+      for (let i = botRoles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [botRoles[i], botRoles[j]] = [botRoles[j], botRoles[i]];
+      }
       for (let i = 1; i <= 4; i++) {
         gameState.roles[i] = botRoles[i - 1];
       }
+
+      // Reinicializa suspeitas de forma neutra e balanceada a cada nova partida
+      gameState.humanSuspicions = { 1: 40, 2: 40, 3: 40, 4: 40 };
+      gameState.humanDeductions = { 1: 'neutral', 2: 'neutral', 3: 'neutral', 4: 'neutral' };
+      gameState.botSuspicions = {};
+      for (let b = 1; b <= 4; b++) {
+        gameState.botSuspicions[b] = {};
+        for (let target = 0; target <= 4; target++) {
+          if (target === b) {
+            gameState.botSuspicions[b][target] = 0.0;
+          } else if (gameState.roles[b] === 'Estagiario' && gameState.roles[target] === 'Estagiario') {
+            // Estagiários se reconhecem mutuamente
+            gameState.botSuspicions[b][target] = 0.0;
+          } else {
+            gameState.botSuspicions[b][target] = 0.40;
+          }
+        }
+      }
+
+      // Reset de alegações prévias e restauração das expressões faciais
+      gameState.botCommodityClaims = {};
+      characters.forEach(c => {
+        if (c.id !== 0) {
+          c.expression = 'confident';
+        }
+      });
 
       // Distribuir mãos iniciais: REGRA OFICIAL KIT C (Manual v14 §2):
       // 1x Cobalto (+1), 1x Titânio (+3) + 2 cartas secretas do Topo Fechado = 4 CARTAS!
@@ -1468,9 +1615,48 @@ def build_game_html():
           // 4, 5 ou 6 = Diretriz Extraordinária Ativa!
           const chosen = dlcDirectives[Math.floor(Math.random() * dlcDirectives.length)];
           gameState.roundDirective = chosen;
+          gameState.inspectedPlayerCard = null;
+          gameState.quarantinePlayerId = null;
+
+          // Efeitos automáticos de ativação de diretiva:
+          if (chosen.id === "LINHA_DE_CREDITO_SINDICAL") {
+            for (let i = 0; i < 5; i++) {
+              if (gameState.tokens[i] < 3) gameState.tokens[i] += 1;
+            }
+          } else if (chosen.id === "LEILAO_DE_BALCAO") {
+            for (let i = 0; i < 5; i++) {
+              buyFromDeckBlind(i);
+            }
+          } else if (chosen.id === "QUARENTENA_REGULATORIA") {
+            // Suspende provisoriamente o bot ou jogador de maior suspeição
+            let maxSus = -1;
+            let target = 1;
+            for (let i = 1; i <= 4; i++) {
+              const s = (gameState.humanSuspicions && gameState.humanSuspicions[i] !== undefined) ? gameState.humanSuspicions[i] : 40;
+              if (s > maxSus) { maxSus = s; target = i; }
+            }
+            gameState.quarantinePlayerId = target;
+          } else if (chosen.id === "INSPECAO_DE_CARTEIRA") {
+            // Revela 1 carta real do jogador mais suspeito (diferente do Chairman)
+            let maxSus = -1;
+            let target = 1;
+            for (let i = 1; i <= 4; i++) {
+              if (i !== gameState.chairId) {
+                const s = (gameState.humanSuspicions && gameState.humanSuspicions[i] !== undefined) ? gameState.humanSuspicions[i] : 40;
+                if (s > maxSus) { maxSus = s; target = i; }
+              }
+            }
+            const pHand = gameState.hands[target];
+            if (pHand && pHand.length > 0) {
+              const cIdx = Math.floor(Math.random() * pHand.length);
+              gameState.inspectedPlayerCard = { playerId: target, card: pHand[cIdx] };
+            }
+          }
         } else {
           // 1, 2 ou 3 = Rodada Ordinária
           gameState.roundDirective = null;
+          gameState.quarantinePlayerId = null;
+          gameState.inspectedPlayerCard = null;
         }
         renderActionCard();
       }, 900);
@@ -1496,6 +1682,7 @@ def build_game_html():
     // ===================================================
     function setupProposalPhase() {
       const contract = contractsList[gameState.roundNum - 1];
+      const needed = getEffectiveCommitteeSize(contract);
       gameState.proposedCommittee = [];
       gameState.designatedSupplier = null;
       gameState.userPromiseDeclared = false;
@@ -1507,9 +1694,8 @@ def build_game_html():
         gameState.designatedSupplier = 0;
       } else {
         // Bot é o Presidente: se for Banqueiro, escolhe membros de menor suspeita no seu dossiê!
-        const needed = contract.committee_size;
         let pool = [gameState.chairId];
-        let others = [0, 1, 2, 3, 4].filter(id => id !== gameState.chairId);
+        let others = [0, 1, 2, 3, 4].filter(id => id !== gameState.chairId && id !== gameState.quarantinePlayerId);
         
         const isBankerChair = gameState.roles[gameState.chairId] === 'Banqueiro';
         if (isBankerChair && gameState.botSuspicions[gameState.chairId]) {
@@ -1531,6 +1717,13 @@ def build_game_html():
     function toggleCommitteeMember(id) {
       if (gameState.chairId !== 0) return;
       const contract = contractsList[gameState.roundNum - 1];
+      const needed = getEffectiveCommitteeSize(contract);
+
+      if (id === gameState.quarantinePlayerId) {
+        alert("⚠️ Este operador está sob Quarentena Regulatória e não pode ser convocado nesta rodada!");
+        return;
+      }
+
       const idx = gameState.proposedCommittee.indexOf(id);
       if (idx > -1) {
         if (gameState.proposedCommittee.length > 1) {
@@ -1540,7 +1733,7 @@ def build_game_html():
           }
         }
       } else {
-        if (gameState.proposedCommittee.length < contract.committee_size) {
+        if (gameState.proposedCommittee.length < needed) {
           gameState.proposedCommittee.push(id);
         }
       }
@@ -1555,8 +1748,9 @@ def build_game_html():
 
     function confirmProposal() {
       const contract = contractsList[gameState.roundNum - 1];
-      if (gameState.proposedCommittee.length !== contract.committee_size) {
-        alert(`O comitê precisa ter exatamente ${contract.committee_size} membros.`);
+      const needed = getEffectiveCommitteeSize(contract);
+      if (gameState.proposedCommittee.length !== needed) {
+        alert(`O comitê precisa ter exatamente ${needed} membros.`);
         return;
       }
       // Avança para a Fase de Deliberação Interativa de Comitê!
@@ -1566,25 +1760,97 @@ def build_game_html():
       renderDuolingoRoster();
     }
 
-    // ===================================================
-    // FASE 2: DELIBERAÇÃO INTERATIVA COM DUOLINGO AVATARS
-    // ===================================================
     function setupDeliberationPhase() {
-      // Gera promessas iniciais dos bots no comitê
+      const contract = contractsList[gameState.roundNum - 1];
+      const reqKey = contract.req_commodity ? contract.req_commodity.split(' ')[0] : null;
+      const requiredCost = contract.cost || 1;
+
+      // Mapeamento do valor base de cada commodity exigida
+      let reqBaseValue = 0;
+      if (reqKey === 'Cobalto') reqBaseValue = 1;
+      else if (reqKey === 'Baunilha') reqBaseValue = 2;
+      else if (reqKey === 'Titânio') reqBaseValue = 3;
+      else if (reqKey === 'Safira') reqBaseValue = 4;
+
+      // Gera promessas para os membros convocados do comitê
       gameState.proposedCommittee.forEach(id => {
         if (id !== 0 && !gameState.promises[id]) {
           const char = characters[id];
           const isTraitor = gameState.roles[id] === 'Estagiario';
-          const points = isTraitor ? (Math.random() < 0.7 ? 3 : 2) : (Math.random() < 0.6 ? 3 : 2);
-          const hasCommodity = isTraitor ? (Math.random() < 0.5) : true;
-          const ariaryBurn = (gameState.tokens[id] > 0 && Math.random() < 0.4) ? 1 : 0;
+          const hand = gameState.hands[id] || [];
+          const tokens = gameState.tokens[id] || 0;
+
+          let hasCommodity = false;
+          let cardPoints = 0;
+          let ariaryBurn = 0;
+
+          if (!isTraitor) {
+            // BANQUEIRO LEAL: Promessa estritamente baseada em sua carteira real
+            const commCard = hand.find(c => c.type === 'WILD' || (reqKey && c.name.includes(reqKey)));
+            if (commCard) {
+              hasCommodity = true;
+              if (requiredCost === 1) {
+                cardPoints = commCard.base; // Ex: Baunilha = 2, Titânio = 3, WILD = 4
+              } else {
+                // cost === 2: insumo + melhor outra carta da mão
+                const others = hand.filter(c => c !== commCard).sort((a,b) => b.base - a.base);
+                cardPoints = commCard.base + (others[0] ? others[0].base : 1);
+              }
+            } else {
+              hasCommodity = false;
+              const sorted = hand.slice().sort((a,b) => b.base - a.base);
+              cardPoints = sorted.slice(0, requiredCost).reduce((acc, c) => acc + c.base, 0);
+              if (cardPoints === 0) cardPoints = requiredCost * 2;
+            }
+
+            // Queima de moedas se tiver saldo e a meta exigir esforço adicional
+            if (tokens > 0 && Math.random() < 0.35) {
+              ariaryBurn = 1;
+            }
+          } else {
+            // ESTAGIÁRIO INFILTRADO: Blefe inteligente e estritamente consistente com as regras
+            const priorClaim = gameState.botCommodityClaims && gameState.botCommodityClaims[id];
+            if (priorClaim) {
+              hasCommodity = priorClaim.claim;
+            } else {
+              // 60% de chance de blefar que vai entregar o insumo
+              hasCommodity = reqKey ? (Math.random() < 0.60) : false;
+            }
+
+            if (hasCommodity && reqKey) {
+              // Se diz que vai entregar Baunilha (+2), o valor da carta é OBRIGATORIAMENTE 2!
+              if (requiredCost === 1) {
+                cardPoints = reqBaseValue;
+              } else {
+                cardPoints = reqBaseValue + (Math.random() < 0.5 ? 3 : 2);
+              }
+            } else {
+              // Se declara que não tem o insumo, promete liquidez de outra carta (ex: Titânio +3 ou Cobalto +1)
+              if (requiredCost === 1) {
+                cardPoints = (Math.random() < 0.7 ? 3 : 1);
+              } else {
+                cardPoints = (Math.random() < 0.6 ? 5 : 4);
+              }
+            }
+
+            if (tokens > 0 && Math.random() < 0.25) {
+              ariaryBurn = 1;
+            }
+          }
+
+          let initialAnswer = "";
+          if (hasCommodity) {
+            initialAnswer = `Garanto a cota de ${contract.req_commodity} (+${cardPoints} pts) na urna!`;
+          } else {
+            initialAnswer = `Não tenho ${contract.req_commodity || 'o insumo'}, mas compenso com +${cardPoints} pts de liquidez!`;
+          }
 
           gameState.promises[id] = {
-            points: points,
+            points: cardPoints,
             hasCommodity: hasCommodity,
             ariaryBurn: ariaryBurn,
             loyaltyClaim: isTraitor ? "Estou comprometido em bater a meta!" : "Idoneidade absoluta com o banco!",
-            lastAnswer: char.voiceLines.pointsHigh
+            lastAnswer: initialAnswer
           };
         }
       });
@@ -1604,24 +1870,33 @@ def build_game_html():
       const char = characters[id];
       const isTraitor = gameState.roles[id] === 'Estagiario';
       const contract = contractsList[gameState.roundNum - 1];
+      const p = gameState.promises[id] || { points: 2, hasCommodity: true, ariaryBurn: 0 };
       let answer = "";
       let expr = char.expression;
 
       if (questionType === 'points') {
-        const promisedPts = gameState.promises[id].points;
-        answer = promisedPts >= 3 ? char.voiceLines.pointsHigh : char.voiceLines.pointsLow;
+        if (p.hasCommodity) {
+          answer = `Garanto +${p.points} pontos de liquidez entregando o insumo oficial (${contract.req_commodity}).`;
+        } else {
+          answer = `Garanto +${p.points} pontos em ativos de liquidez líquida para cobrir a meta contratual.`;
+        }
         if (isTraitor) expr = 'sweating';
       } else if (questionType === 'commodity') {
-        const hasComm = gameState.promises[id].hasCommodity;
-        answer = hasComm 
-          ? `Sim! Tenho a remessa de ${contract.req_commodity || 'commodities'} garantida no cofre.`
-          : `Não possuo ${contract.req_commodity || 'esse insumo'}, foco na liquidez financeira.`;
-        if (isTraitor && hasComm) expr = 'sweating';
+        if (p.hasCommodity) {
+          answer = `Sim! Confirmo que a remessa de ${contract.req_commodity} está sob minha responsabilidade no cofre.`;
+          if (isTraitor) expr = 'sweating';
+        } else {
+          answer = `Não possuo ${contract.req_commodity}. Recomendo que outro operador assegure a cota do insumo.`;
+          expr = 'neutral';
+        }
       } else if (questionType === 'ariary') {
-        const burn = gameState.promises[id].ariaryBurn;
-        answer = burn > 0 ? char.voiceLines.ariaryBurn : char.voiceLines.ariaryNone;
+        if (p.ariaryBurn > 0) {
+          answer = `Sim! Vou desembolsar ${p.ariaryBurn} moeda(s) de Ariary para reforçar os pontos da operação.`;
+        } else {
+          answer = `Sem queima de moedas de Ariary nesta rodada. Manteremos a reserva estratégica.`;
+        }
       } else if (questionType === 'loyalty') {
-        answer = isTraitor ? char.voiceLines.loyaltyTraitor : char.voiceLines.loyaltyLoyal;
+        answer = isTraitor ? "Eu? Sabotar?! Jamais! Meu compromisso é com o sucesso da nossa mesa!" : "Minha idoneidade com o conselho é absoluta. Negócio fechado é contrato cumprido!";
         expr = isTraitor ? 'sweating' : 'confident';
       }
 
@@ -1663,37 +1938,99 @@ def build_game_html():
     // ===================================================
     function submitHumanVote(approved) {
       const votes = {};
+      const voteReasons = {};
       votes[0] = approved;
+      voteReasons[0] = approved ? "Votou a favor da formação" : "Vetou a proposta";
 
-      // Votos dos bots:
-      // Banqueiros leais consultam suas suspeitas (influenciadas pelo Dossiê do Jogador!)
-      // Se qualquer outro membro do comitê tiver suspeita >= 0.65, o Banqueiro leal VETA (Voto NÃO)!
+      const contract = contractsList[gameState.roundNum - 1];
+      const chairId = gameState.chairId;
+
+      // Votação refinada dos bots baseada em suspeita e papéis (alinhada ao engine.py):
       let yesCount = approved ? 1 : 0;
       for (let i = 1; i <= 4; i++) {
         const isBanker = gameState.roles[i] === 'Banqueiro';
         let botVote = true;
+        let reason = "Aprovou a comissão";
+
         if (isBanker) {
+          const suspicionsOfI = gameState.botSuspicions[i] || {};
+          const chairSus = suspicionsOfI[chairId] || 0.40;
+          const inComm = gameState.proposedCommittee.includes(i);
           const othersInComm = gameState.proposedCommittee.filter(id => id !== i);
-          const maxSus = Math.max(...othersInComm.map(id => (gameState.botSuspicions[i] && gameState.botSuspicions[i][id]) || 0.40), 0);
-          if (maxSus >= 0.65) {
-            botVote = false; // Veto do Banqueiro por suspeita do Dossiê!
-          } else {
-            botVote = true;
+
+          // 1. Veto por desconfiança no Chairman proponente
+          if (chairId !== i && chairSus >= 0.55) {
+            botVote = false;
+            reason = `Veto: desconfiança na presidência (${Math.round(chairSus * 100)}%)`;
+          }
+          // 2. Veto por integrante de alta suspeita no comitê
+          else {
+            const highSusMember = othersInComm.find(id => (suspicionsOfI[id] || 0.40) >= 0.60);
+            if (highSusMember) {
+              botVote = false;
+              const susVal = Math.round((suspicionsOfI[highSusMember] || 0.40) * 100);
+              reason = `Veto: suspeita em ${characters[highSusMember].name} (${susVal}%)`;
+            }
+            // 3. Se o próprio Banqueiro está de fora no banco, calcula a média de risco do comitê
+            else if (!inComm) {
+              const avgSus = gameState.proposedCommittee.reduce((acc, id) => acc + (suspicionsOfI[id] || 0.40), 0) / gameState.proposedCommittee.length;
+              if (avgSus >= 0.48) {
+                botVote = false;
+                reason = `Veto: risco médio da mesa elevado (${Math.round(avgSus * 100)}%)`;
+              }
+            }
           }
         } else {
-          // Estagiário vota SIM se estiver no comitê, ou blefa votando SIM ~55% das vezes
+          // Estagiário Infiltrado:
+          // Vota SIM se estiver dentro do comitê para sabotar!
           const inComm = gameState.proposedCommittee.includes(i);
-          botVote = inComm ? true : (Math.random() < 0.55);
+          if (inComm) {
+            botVote = true;
+            reason = "Interesse em integrar a comissão";
+          } else {
+            // De fora, tenta sabotar a aprovação de comitês limpos de banqueiros (~65% veto)
+            const allBankers = gameState.proposedCommittee.every(id => gameState.roles[id] === 'Banqueiro');
+            if (allBankers && Math.random() < 0.65) {
+              botVote = false;
+              reason = "Obstrução de bancada dissidente";
+            } else {
+              botVote = Math.random() < 0.45;
+              reason = botVote ? "Blefe de governança" : "Objeção regimental";
+            }
+          }
         }
+
         votes[i] = botVote;
+        voteReasons[i] = reason;
         if (botVote) yesCount++;
       }
 
-      const passed = yesCount >= 3;
+      // Aplicação de Diretrizes de Governança na Votação:
+      if (gameState.roundDirective && gameState.roundDirective.id === "GOLDEN_SHARE" && votes[gameState.chairId]) {
+        yesCount += 1;
+      }
+
+      let neededVotes = 3;
+      if (gameState.roundDirective && gameState.roundDirective.id === "DECRETO_PRESIDENCIAL") {
+        neededVotes = 2; // Gabinete de crise
+      } else if (gameState.roundDirective && (gameState.roundDirective.id === "SUPERMAIORIA_EXIGIDA" || gameState.roundDirective.id === "PEDIDO_DE_VISTA")) {
+        neededVotes = 4; // Exige 4 votos
+      }
+
+      const passed = yesCount >= neededVotes;
+
+      // Monta relatório detalhado e transparente da votação
+      gameState.lastVoteReport = {
+        passed: passed,
+        yesCount: yesCount,
+        noCount: 5 - (passed && gameState.roundDirective && gameState.roundDirective.id === "GOLDEN_SHARE" && votes[gameState.chairId] ? yesCount - 1 : yesCount),
+        neededVotes: neededVotes,
+        votes: votes,
+        voteReasons: voteReasons
+      };
 
       if (passed) {
         gameState.consecutiveVetoes = 0;
-        // Avança para depósito na urna
         gameState.stage = 'DEPOSIT';
         gameState.humanCoinsSpent = 0;
         if (gameState.proposedCommittee.includes(0) && gameState.hands[0] && gameState.hands[0].length > 0) {
@@ -1716,7 +2053,6 @@ def build_game_html():
           }
           renderActionCard();
         } else {
-          alert(`Comitê vetado pela mesa (${yesCount} votos SIM vs ${5 - yesCount} votos NÃO). A presidência avança.`);
           gameState.chairId = (gameState.chairId + 1) % 5;
           gameState.stage = 'PROPOSAL';
           setupProposalPhase();
@@ -1726,9 +2062,6 @@ def build_game_html():
       updateUI();
     }
 
-    // ===================================================
-    // FASE 4: DEPÓSITO SECRETO NA URNA (VAULT)
-    // ===================================================
     function toggleHumanCardSelect(cardIndex) {
       const contract = contractsList[gameState.roundNum - 1];
       const requiredCost = contract.cost || 1;
@@ -1758,16 +2091,15 @@ def build_game_html():
     function confirmDeposit() {
       const contract = contractsList[gameState.roundNum - 1];
       const inComm = gameState.proposedCommittee.includes(0);
+      const requiredCost = contract.cost || 1;
 
-      if (inComm && gameState.humanSelectedCards.length !== contract.cost) {
-        alert(`Você precisa selecionar exatamente ${contract.cost} carta(s) para depositar.`);
+      if (inComm && gameState.humanSelectedCards.length !== requiredCost) {
+        alert(`Você precisa selecionar exatamente ${requiredCost} carta(s) para depositar.`);
         return;
       }
 
-      // Processa depósitos de todos os membros do comitê
-      let submittedCards = [];
+      let allVaultCards = [];
       let totalPoints = 0;
-      let hasRequiredCommodity = false;
       let totalCoinsSpent = 0;
       let auditLog = [];
 
@@ -1781,54 +2113,72 @@ def build_game_html():
           gameState.humanSelectedCards.forEach(cardIdx => {
             const card = gameState.hands[0].splice(cardIdx, 1)[0];
             cardsDeposited.push(card);
+            allVaultCards.push({ card: card, ownerId: 0 });
           });
           coinsSpent = gameState.humanCoinsSpent;
+          if (gameState.roundDirective && gameState.roundDirective.id === "CHAMADA_DE_MARGEM" && gameState.tokens[0] > 0 && coinsSpent === 0) {
+            coinsSpent = 1;
+          }
           gameState.tokens[0] -= coinsSpent;
         } else {
-          // Depósito do bot baseado em seu papel
+          // Depósito do bot baseado em seu papel e perfil de IA
           const isTraitor = gameState.roles[id] === 'Estagiario';
           const pHand = gameState.hands[id];
-          
-          if (isTraitor && Math.random() < 0.75) {
-            // Tenta sabotar! Procura ativo tóxico ou carta fraca
-            const toxicIdx = pHand.findIndex(c => c.type === 'TOXIC');
-            if (toxicIdx > -1) {
-              cardsDeposited.push(pHand.splice(toxicIdx, 1)[0]);
+          const willSabotage = isTraitor && shouldBotSabotage(id, gameState.roundNum, gameState.bankerScore);
+
+          if (gameState.roundDirective && gameState.roundDirective.id === "CHAMADA_DE_MARGEM" && gameState.tokens[id] > 0) {
+            coinsSpent += 1;
+            gameState.tokens[id] -= 1;
+          }
+
+          for (let step = 0; step < requiredCost; step++) {
+            if (pHand.length === 0) break;
+
+            if (willSabotage) {
+              const toxicIdx = pHand.findIndex(c => c.type === 'TOXIC');
+              if (toxicIdx > -1) {
+                const c = pHand.splice(toxicIdx, 1)[0];
+                cardsDeposited.push(c);
+                allVaultCards.push({ card: c, ownerId: id });
+              } else {
+                pHand.sort((a,b) => a.base - b.base);
+                const c = pHand.shift();
+                cardsDeposited.push(c);
+                allVaultCards.push({ card: c, ownerId: id });
+              }
             } else {
-              // Carta de menor valor
-              pHand.sort((a,b) => a.base - b.base);
-              cardsDeposited.push(pHand.shift());
+              const reqKey = contract.req_commodity ? contract.req_commodity.split(' ')[0] : null;
+              let reqIdx = -1;
+              if (reqKey) {
+                reqIdx = pHand.findIndex(c => c.type === 'WILD' || c.name.includes(reqKey));
+              }
+              if (reqIdx > -1) {
+                const c = pHand.splice(reqIdx, 1)[0];
+                cardsDeposited.push(c);
+                allVaultCards.push({ card: c, ownerId: id });
+              } else {
+                pHand.sort((a,b) => b.base - a.base);
+                const c = pHand.shift();
+                cardsDeposited.push(c);
+                allVaultCards.push({ card: c, ownerId: id });
+              }
             }
-          } else {
-            // Banqueiro leal: prioriza insumo exigido se tiver, e pontos altos
-            const reqIdx = contract.req_commodity ? pHand.findIndex(c => c.name.includes(contract.req_commodity.split(' ')[0])) : -1;
-            if (reqIdx > -1) {
-              cardsDeposited.push(pHand.splice(reqIdx, 1)[0]);
-            } else {
-              pHand.sort((a,b) => b.base - a.base);
-              cardsDeposited.push(pHand.shift());
-            }
-            // Queima moedas se prometido
-            if (gameState.promises[id] && gameState.promises[id].ariaryBurn > 0 && gameState.tokens[id] > 0) {
-              coinsSpent = 1;
-              gameState.tokens[id] -= 1;
-            }
+          }
+
+          if (!willSabotage && gameState.promises[id] && gameState.promises[id].ariaryBurn > 0 && gameState.tokens[id] > 0 && coinsSpent === 0) {
+            coinsSpent = 1;
+            gameState.tokens[id] -= 1;
           }
         }
 
-        // Soma pontos e verifica insumo
         let memberPts = coinsSpent;
         cardsDeposited.forEach(c => {
           memberPts += c.base;
-          if (contract.req_commodity && c.name.includes(contract.req_commodity.split(' ')[0])) {
-            hasRequiredCommodity = true;
-          }
         });
 
         totalPoints += memberPts;
         totalCoinsSpent += coinsSpent;
 
-        // Compara com a promessa feita na deliberação!
         const promise = gameState.promises[id] || { points: 0, hasCommodity: false, ariaryBurn: 0 };
         const promisedTotal = promise.points + (promise.ariaryBurn || 0);
         const fulfilled = memberPts >= promisedTotal;
@@ -1844,62 +2194,163 @@ def build_game_html():
         });
       });
 
-      // Aplica efeitos das Diretrizes de DLC se ativo
-      let effectiveTarget = contract.target;
+      // Contagem oficial de insumos entregues (WILD conta como qualquer insumo)
+      let totalCommoditiesDelivered = 0;
+      allVaultCards.forEach(item => {
+        const c = item.card;
+        if (contract.req_commodity && (c.type === 'WILD' || c.name.includes(contract.req_commodity.split(' ')[0]))) {
+          totalCommoditiesDelivered++;
+        }
+      });
+
+      const requiredCount = contract.req_count || 1;
+      let hasRequiredCommodity = totalCommoditiesDelivered >= requiredCount;
+
+      let effectiveTarget = getEffectiveTarget(contract);
       let needCommodity = contract.req_commodity !== null;
 
-      if (gameState.roundDirective) {
-        if (gameState.roundDirective.id === "SUBSIDIO_GOVERNAMENTAL") {
-          effectiveTarget = Math.max(3, contract.target - 2);
-        } else if (gameState.roundDirective.id === "CRISE_DE_OFERTA") {
-          effectiveTarget = contract.target + 2;
-        } else if (gameState.roundDirective.id === "SWAP_DE_COMMODITY") {
-          needCommodity = false;
-        }
+      if (gameState.roundDirective && gameState.roundDirective.id === "SWAP_DE_COMMODITY") {
+        needCommodity = false;
       }
 
-      // Seguro Contra Sinistro: Se ativo e houver tóxico, anula a penalidade do primeiro tóxico
+      // Seguro Contra Sinistro: Anula o primeiro Ativo Tóxico encontrado
       if (gameState.roundDirective && gameState.roundDirective.id === "SEGURO_CONTRA_SINISTRO") {
-        for (let row of auditLog) {
-          const toxicCard = row.cards.find(c => c.type === 'TOXIC');
-          if (toxicCard && !toxicCard.annulled) {
-            toxicCard.annulled = true;
-            row.pointsEarned += 4;
+        for (let item of allVaultCards) {
+          if (item.card.type === 'TOXIC' && !item.card.annulled) {
+            item.card.annulled = true;
             totalPoints += 4;
             break;
           }
         }
       }
 
-      // Regra de Sucesso: totalPoints >= target E (sem exigência ou tem o insumo)
-      const isSuccess = (totalPoints >= effectiveTarget) && (!needCommodity || hasRequiredCommodity);
-
-      if (isSuccess) {
-        gameState.bankerScore++;
-      } else {
-        gameState.internScore++;
+      // Auditoria CVM: Inspeciona 1 carta da urna
+      gameState.revealedCvmCard = null;
+      if (gameState.roundDirective && gameState.roundDirective.id === "AUDITORIA_CVM" && allVaultCards.length > 0) {
+        const picked = allVaultCards[Math.floor(Math.random() * allVaultCards.length)];
+        gameState.revealedCvmCard = picked;
       }
 
-      // Registra dados para a tela de revelação
+      const isSuccess = (totalPoints >= effectiveTarget) && (!needCommodity || hasRequiredCommodity);
+
+      // Embaralhamento 100% anônimo das cartas do cofre para apresentação pública na mesa!
+      let anonymousVaultCards = allVaultCards.map(item => item.card);
+      for (let i = anonymousVaultCards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [anonymousVaultCards[i], anonymousVaultCards[j]] = [anonymousVaultCards[j], anonymousVaultCards[i]];
+      }
+
+      // Sistema Oficial de Créditos de Sucesso (SEGREDO DE CONCESSÃO)
+      let meritAwards = [];
+      if (isSuccess) {
+        gameState.bankerScore++;
+        gameState.proposedCommittee.forEach(mId => {
+          gameState.successCredits[mId] = (gameState.successCredits[mId] || 0) + 1;
+          if (gameState.successCredits[mId] >= 2) {
+            gameState.successCredits[mId] = 0;
+            if (gameState.roles[mId] === 'Banqueiro') {
+              if (gameState.specialReserve.WILD > 0) {
+                gameState.specialReserve.WILD--;
+                gameState.hands[mId].push({ type: "WILD", name: "Ouro Líquido (+4)", base: 4 });
+                meritAwards.push({ id: mId, isHuman: mId === 0, cardName: '🌟 Ouro Líquido (+4)' });
+              }
+            } else {
+              if (gameState.specialReserve.TOXIC > 0) {
+                gameState.specialReserve.TOXIC--;
+                gameState.hands[mId].push({ type: "TOXIC", name: "Ativo Tóxico (-4)", base: -4 });
+                meritAwards.push({ id: mId, isHuman: mId === 0, cardName: '☣️ Ativo Tóxico (-4)' });
+              }
+            }
+          }
+        });
+      } else {
+        gameState.internScore++;
+        if (gameState.roundNum === 3) gameState.prevTier3Failed = true;
+        if (gameState.roundNum === 4) gameState.prevTier4Failed = true;
+      }
+
+      // Atualização Dinâmica das Suspeitas dos Banqueiros (Aprendizado Bayesiano de Mesa)
+      const hasToxicInVault = allVaultCards.some(item => item.card.type === 'TOXIC');
+      const hasSegregated = gameState.roundDirective && gameState.roundDirective.id === "CONTABILIDADE_SEGREGADA";
+
+      for (let b = 1; b <= 4; b++) {
+        if (gameState.roles[b] === 'Banqueiro') {
+          if (!gameState.botSuspicions[b]) gameState.botSuspicions[b] = {};
+
+          if (!isSuccess) {
+            // Se falhou: membros do comitê recebem aumento substancial de suspeita
+            gameState.proposedCommittee.forEach(mId => {
+              if (mId !== b) {
+                const cur = gameState.botSuspicions[b][mId] || 0.40;
+                const penalty = hasToxicInVault ? 0.35 : 0.20;
+                gameState.botSuspicions[b][mId] = Math.min(0.95, cur + penalty);
+              }
+            });
+            // Penalidade leve para o Chairman que montou o comitê fracassado
+            if (gameState.chairId !== b && !gameState.proposedCommittee.includes(gameState.chairId)) {
+              const curChair = gameState.botSuspicions[b][gameState.chairId] || 0.40;
+              gameState.botSuspicions[b][gameState.chairId] = Math.min(0.85, curChair + 0.15);
+            }
+          } else {
+            // Se teve sucesso: membros do comitê ganham confiança
+            gameState.proposedCommittee.forEach(mId => {
+              if (mId !== b) {
+                const cur = gameState.botSuspicions[b][mId] || 0.40;
+                gameState.botSuspicions[b][mId] = Math.max(0.10, cur - 0.15);
+              }
+            });
+          }
+
+          // Se a contabilidade segregada revelou culpados ou a auditoria CVM revelou:
+          if (hasSegregated) {
+            auditLog.forEach(row => {
+              if (!row.fulfilled && row.playerId !== b) {
+                gameState.botSuspicions[b][row.playerId] = 1.00; // Culpado comprovado!
+              }
+            });
+          }
+        }
+      }
+
+      // Atualiza também humanSuspicions sugeridas de forma sutil se houve sabotagem
+      if (!isSuccess) {
+        gameState.proposedCommittee.forEach(mId => {
+          if (mId !== 0) {
+            const curH = gameState.humanSuspicions[mId] || 40;
+            updatePlayerSuspicion(mId, Math.min(90, curH + (hasToxicInVault ? 25 : 15)));
+          }
+        });
+      } else {
+        gameState.proposedCommittee.forEach(mId => {
+          if (mId !== 0) {
+            const curH = gameState.humanSuspicions[mId] || 40;
+            updatePlayerSuspicion(mId, Math.max(15, curH - 10));
+          }
+        });
+      }
+
       gameState.lastRevealData = {
         contract: contract,
         effectiveTarget: effectiveTarget,
         totalPoints: totalPoints,
+        totalCommoditiesDelivered: totalCommoditiesDelivered,
+        requiredCount: requiredCount,
         hasRequiredCommodity: hasRequiredCommodity,
         isSuccess: isSuccess,
         auditLog: auditLog,
-        totalCoinsSpent: totalCoinsSpent
+        anonymousVaultCards: anonymousVaultCards,
+        hasSegregatedAudit: hasSegregated,
+        totalCoinsSpent: totalCoinsSpent,
+        meritAwards: meritAwards
       };
 
       gameState.stage = 'REVEAL';
       renderActionCard();
       renderDuolingoRoster();
+      renderPlayerHand();
       updateUI();
     }
 
-    // ===================================================
-    // FASE 5: REVELAÇÃO DA URNA & AUDITORIA DE PROMESSAS
-    // ===================================================
     function finishRound() {
       const lastComm = gameState.proposedCommittee;
       const benchPlayers = [0, 1, 2, 3, 4].filter(id => !lastComm.includes(id));
@@ -2132,9 +2583,15 @@ def build_game_html():
             <div class="flex flex-wrap justify-center gap-1">
               ${badgeStatus}
             </div>
-            <div class="text-[11px] font-cartoon font-bold text-[#78350f] bg-[#fef3c7] px-2.5 py-0.5 rounded-full border border-[#b45309]">
-              ${gameState.tokens[char.id] || 0} 🪙 Ariary
+            <div class="flex items-center gap-1.5 flex-wrap justify-center">
+              <div class="text-[10px] font-cartoon font-bold text-[#78350f] bg-[#fef3c7] px-2 py-0.5 rounded-full border border-[#b45309]">
+                ${gameState.tokens[char.id] || 0} 🪙 Ariary
+              </div>
+              <div class="text-[10px] font-cartoon font-bold text-[#6b21a8] bg-[#f3e8ff] px-2 py-0.5 rounded-full border border-[#9333ea]" title="Crédito de Sucesso: ao completar 2 comitês aprovados, Banqueiro ganha 1 WILD e Estagiário ganha 1 TOXIC da reserva">
+                ⭐ ${gameState.successCredits[char.id] || 0}/2
+              </div>
             </div>
+            ${gameState.quarantinePlayerId === char.id ? '<div class="text-[9px] font-cartoon font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-400">🚫 EM QUARENTENA</div>' : ''}
             ${deductionUi}
           </div>
         `;
@@ -2400,6 +2857,23 @@ def build_game_html():
         container.innerHTML = `
           <div class="space-y-6">
             ${missionCard}
+
+            <!-- Alertas Especiais de Diretivas Regulatórias Ativas -->
+            ${gameState.quarantinePlayerId !== null ? `
+              <div class="p-3.5 bg-rose-50 border-2 border-rose-400 rounded-2xl flex items-center justify-between text-xs text-rose-900 font-cartoon font-bold">
+                <span>🚫 QUARENTENA REGULATÓRIA: ${characters[gameState.quarantinePlayerId].name} está sob suspeita cautelar e NÃO pode integrar o comitê!</span>
+                <span class="bg-rose-200 px-2 py-0.5 rounded">Suspensão CVM</span>
+              </div>
+            ` : ''}
+
+            ${gameState.inspectedPlayerCard !== null ? `
+              <div class="p-3.5 bg-amber-50 border-2 border-amber-400 rounded-2xl text-xs text-amber-950 font-cartoon font-bold space-y-1">
+                <div class="flex items-center gap-1.5 text-[#b45309]">
+                  <span>🔍 INSPEÇÃO DE CARTEIRA (AUDITORIA DE BALCÃO):</span>
+                </div>
+                <div>A auditoria inspecionou a carteira de <strong>${characters[gameState.inspectedPlayerCard.playerId].name}</strong> e revelou: <strong>${gameState.inspectedPlayerCard.card.name}</strong> (${gameState.inspectedPlayerCard.card.base > 0 ? '+' + gameState.inspectedPlayerCard.card.base : gameState.inspectedPlayerCard.card.base} pts)!</div>
+              </div>
+            ` : ''}
 
             <!-- Seção 1: Sua Declaração para a Mesa / Presidente -->
             <div class="bg-[#fbf6ec] border-2 border-[#2b180d] p-4 md:p-5 rounded-3xl space-y-3 shadow-sm">
@@ -2804,35 +3278,94 @@ def build_game_html():
         }
       }
 
-      // ================= FASE 5: REVELAÇÃO DA URNA & AUDITORIA =================
+      // ================= FASE 5: REVELAÇÃO DA URNA (SIGILO ABSOLUTO) =================
       else if (gameState.stage === 'REVEAL') {
         const rev = gameState.lastRevealData;
         const outcomeStamp = rev.isSuccess 
           ? '<span class="stamp-approved px-5 py-2 rounded-2xl text-base">CONTRATO APROVADO! 🎉</span>'
           : '<span class="stamp-sabotaged px-5 py-2 rounded-2xl text-base">💥 SABOTAGEM DETECTADA!</span>';
 
-        // Tabela de comparação: O que prometeram vs O que depositaram!
-        let auditRows = '';
+        // Cartas anônimas retiradas do cofre (embaralhadas coletivamente)
+        let vaultCardsHtml = '';
+        rev.anonymousVaultCards.forEach((c, idx) => {
+          let badgeColor = 'bg-[#fbf6ec] border-[#2b180d] text-[#2b180d]';
+          let icon = '📦';
+          if (c.type === 'VN') { badgeColor = 'bg-amber-100 border-amber-600 text-amber-900'; icon = '🌾'; }
+          else if (c.type === 'SF') { badgeColor = 'bg-blue-100 border-blue-600 text-blue-900'; icon = '💎'; }
+          else if (c.type === 'TI') { badgeColor = 'bg-slate-200 border-slate-600 text-slate-900'; icon = '⚙️'; }
+          else if (c.type === 'CO') { badgeColor = 'bg-indigo-100 border-indigo-600 text-indigo-900'; icon = '🔩'; }
+          else if (c.type === 'WILD') { badgeColor = 'bg-yellow-200 border-yellow-600 text-yellow-950'; icon = '🌟'; }
+          else if (c.type === 'TOXIC') { badgeColor = 'bg-rose-100 border-rose-600 text-rose-950 animate-pulse'; icon = '☣️'; }
+
+          vaultCardsHtml += `
+            <div class="cartoon-card-subtle p-3 text-center space-y-1.5 ${badgeColor} border-2">
+              <div class="text-xs font-cartoon font-bold opacity-75">Carta #${idx + 1}</div>
+              <div class="text-2xl">${icon}</div>
+              <div class="font-cartoon font-bold text-xs leading-tight">${c.name}</div>
+              <div class="font-cartoon font-bold text-sm bg-white/80 py-0.5 rounded border border-black/15">
+                ${c.base > 0 ? '+' + c.base : c.base} pts
+              </div>
+            </div>
+          `;
+        });
+
+        // Promessas que os membros do comitê fizeram publicamente na mesa
+        let promiseRows = '';
+        let totalPromisedPts = 0;
         rev.auditLog.forEach(row => {
           const char = characters[row.playerId];
-          const cardsLabel = row.cards.map(c => `${c.name} (${c.base > 0 ? '+' + c.base : c.base})`).join(', ');
-          const coinLabel = row.coins > 0 ? ` +${row.coins}🪙` : '';
-          const statusBadge = row.fulfilled 
-            ? '<span class="text-xs font-cartoon font-bold text-[#166534] bg-[#dcfce7] px-2.5 py-0.5 rounded-full border border-[#15803d]">Cumpriu ✅</span>'
-            : '<span class="text-xs font-cartoon font-bold text-[#991b1b] bg-[#fee2e2] px-2.5 py-0.5 rounded-full border border-[#dc2626]">Mentiu / Sabotou ❌</span>';
+          totalPromisedPts += row.promised;
+          const p = gameState.promises[row.playerId];
+          const hasCommLabel = p && p.hasCommodity ? 'Garantido ✅' : 'Não possui ❌';
+          const coinLabel = p && p.ariaryBurn > 0 ? `+${p.ariaryBurn} 🪙` : '0 🪙';
 
-          auditRows += `
+          promiseRows += `
             <tr class="border-b border-[#2b180d]/10 text-xs">
-              <td class="py-3 px-3 font-cartoon font-bold text-[#2b180d] flex items-center gap-1.5">
+              <td class="py-2.5 px-3 font-cartoon font-bold text-[#2b180d] flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full" style="background: ${char.color}"></span>
                 ${char.name}
               </td>
-              <td class="py-3 px-3 text-[#b45309] font-cartoon font-bold">+${row.promised} pts</td>
-              <td class="py-3 px-3 font-medium">${cardsLabel}${coinLabel} (= ${row.pointsEarned} pts)</td>
-              <td class="py-3 px-3">${statusBadge}</td>
+              <td class="py-2.5 px-3 text-[#b45309] font-cartoon font-bold">+${p ? p.points : 0} pts</td>
+              <td class="py-2.5 px-3 font-medium">${hasCommLabel}</td>
+              <td class="py-2.5 px-3">${coinLabel}</td>
             </tr>
           `;
         });
+
+        // Revelação nominal apenas se a Contabilidade Segregada estiver ativa
+        let segregatedAuditHtml = '';
+        if (rev.hasSegregatedAudit) {
+          let segRows = '';
+          rev.auditLog.forEach(row => {
+            const char = characters[row.playerId];
+            const cardsLabel = row.cards.map(c => `${c.name} (${c.base > 0 ? '+' + c.base : c.base})`).join(', ');
+            const statusBadge = row.fulfilled 
+              ? '<span class="text-xs font-cartoon font-bold text-[#166534] bg-[#dcfce7] px-2 py-0.5 rounded-full border border-[#15803d]">Cumpriu ✅</span>'
+              : '<span class="text-xs font-cartoon font-bold text-[#991b1b] bg-[#fee2e2] px-2 py-0.5 rounded-full border border-[#dc2626]">Sabotou ❌</span>';
+            segRows += `
+              <tr class="border-b border-[#2b180d]/10 text-xs">
+                <td class="py-2 px-3 font-bold">${char.name}</td>
+                <td class="py-2 px-3">${cardsLabel} (= ${row.pointsEarned} pts)</td>
+                <td class="py-2 px-3">${statusBadge}</td>
+              </tr>
+            `;
+          });
+          segregatedAuditHtml = `
+            <div class="mt-4 p-4 bg-purple-50 border-2 border-purple-400 rounded-2xl space-y-2">
+              <div class="flex items-center gap-2 text-purple-900 font-cartoon font-bold text-xs">
+                <span>📑 DIRETIVA ATIVA: CONTABILIDADE SEGREGADA</span>
+                <span class="bg-purple-200 px-2 py-0.5 rounded">Auditoria Nominal Oficial</span>
+              </div>
+              <p class="text-[11px] text-purple-950">As cartas foram depositadas em pilhas nominais antes de serem unificadas ao cofre:</p>
+              <table class="w-full text-left bg-white rounded-xl border border-purple-300">
+                <thead class="text-[10px] text-purple-900 bg-purple-100 border-b">
+                  <tr><th class="p-2">Operador</th><th class="p-2">Depósito Nominal</th><th class="p-2">Veredito</th></tr>
+                </thead>
+                <tbody>${segRows}</tbody>
+              </table>
+            </div>
+          `;
+        }
 
         container.innerHTML = `
           <div class="space-y-6">
@@ -2840,33 +3373,78 @@ def build_game_html():
               <div>
                 <span class="text-xs font-cartoon font-bold text-[#b45309] uppercase">Resultado da Auditoria da Urna</span>
                 <h3 class="font-cartoon text-2xl font-bold text-[#2b180d] mt-1">${rev.contract.name}</h3>
-                <p class="text-xs text-[#6b472e]">Total Obtido: <strong>${rev.totalPoints} / ${rev.effectiveTarget || rev.contract.target} pts</strong> • Insumo Entregue: <strong>${rev.hasRequiredCommodity ? 'Sim ✅' : 'Não ❌'}</strong></p>
+                <p class="text-xs text-[#6b472e]">Total Obtido: <strong>${rev.totalPoints} / ${rev.effectiveTarget || rev.contract.target} pts</strong> • Insumo Entregue: <strong>${rev.totalCommoditiesDelivered || 0} / ${rev.requiredCount} ${rev.contract.req_commodity || ''} ${rev.hasRequiredCommodity ? '✅' : '❌'}</strong></p>
               </div>
               <div>${outcomeStamp}</div>
             </div>
 
-            <!-- Tabela de Comparação de Promessas -->
+            <!-- Notificações Especiais de Auditoria CVM e Mérito -->
+            ${gameState.revealedCvmCard ? `
+              <div class="p-3.5 bg-sky-50 border-2 border-sky-400 rounded-2xl text-xs text-sky-950 font-cartoon font-bold flex items-center justify-between">
+                <span>🔍 AUDITORIA CVM NO COFRE: A CVM inspecionou e revelou 1 carta da urna: <strong>${gameState.revealedCvmCard.card.name}</strong> (${gameState.revealedCvmCard.card.base > 0 ? '+' + gameState.revealedCvmCard.card.base : gameState.revealedCvmCard.card.base} pts) depositada por <strong>${characters[gameState.revealedCvmCard.ownerId].name}</strong>!</span>
+                <span class="bg-sky-200 text-sky-900 px-2 py-0.5 rounded">Due Diligence</span>
+              </div>
+            ` : ''}
+
+            ${rev.meritAwards && rev.meritAwards.length > 0 ? `
+              <div class="p-3.5 bg-purple-50 border-2 border-purple-400 rounded-2xl text-xs text-purple-950 font-cartoon font-bold space-y-1">
+                <div class="flex items-center gap-1.5 text-purple-800">
+                  <span>⭐ RECOMPENSA POR MÉRITO (CRÉDITO 2/2 ATINGIDO):</span>
+                </div>
+                ${rev.meritAwards.map(m => `
+                  <div>
+                    • <strong>${characters[m.id].name}</strong> completou 2 comitês aprovados e recebeu <strong>1 Carta Secreta da Reserva Especial</strong>!
+                    ${m.isHuman ? `<span class="text-xs text-[#0369a1] bg-[#e0f2fe] px-2 py-0.5 rounded-full border border-[#0284c7] ml-2">Sua recompensa privada: ${m.cardName}</span>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- Grade de Cartas Anônimas do Cofre -->
+            <div class="space-y-3 bg-[#fdfaf4] p-4 rounded-3xl border-2 border-[#2b180d]">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 border-b border-[#2b180d]/15 pb-2">
+                <h4 class="font-cartoon text-base font-bold text-[#2b180d] flex items-center gap-2">
+                  <span>🗳️ Conteúdo Extraído da Urna (Sigilo Absoluto):</span>
+                  <span class="text-xs bg-[#b45309] text-white px-2.5 py-0.5 rounded-full font-bold">${rev.anonymousVaultCards.length} Cartas Coletivas</span>
+                </h4>
+                <span class="text-xs text-[#8c4314] font-medium">As cartas foram embaralhadas na urna antes da abertura.</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-1">
+                ${vaultCardsHtml}
+              </div>
+              ${rev.totalCoinsSpent > 0 ? `
+                <div class="text-xs font-cartoon font-bold text-[#78350f] bg-[#fef3c7] p-2.5 rounded-xl border border-[#b45309] text-center">
+                  🪙 Moedas de Ariary Queimadas no Depósito Coletivo: +${rev.totalCoinsSpent} pontos de liquidez
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Balanço de Promessas Públicas e Dedução Social -->
             <div class="space-y-3">
               <div class="flex justify-between items-center">
-                <h4 class="font-cartoon text-base font-bold text-[#2b180d]">Auditoria Forense de Promessas:</h4>
-                <span class="text-[11px] text-[#6b472e]">Verifique quem cumpriu o acordo e quem traiu a comissão!</span>
+                <h4 class="font-cartoon text-base font-bold text-[#2b180d]">Balanço das Promessas Declaradas na Mesa:</h4>
+                <span class="text-xs font-cartoon font-bold ${rev.totalPoints >= totalPromisedPts ? 'text-[#166534]' : 'text-[#991b1b]'}">
+                  Prometido: +${totalPromisedPts} pts | Apurado na Urna: +${rev.totalPoints} pts ${rev.totalPoints < totalPromisedPts ? `(Discrepância de ${rev.totalPoints - totalPromisedPts} pts!)` : '✓'}
+                </span>
               </div>
               <div class="overflow-x-auto bg-white rounded-2xl border-2 border-[#2b180d] shadow-sm">
                 <table class="w-full text-left">
                   <thead class="bg-[#fbf5e7] border-b-2 border-[#2b180d] text-[11px] font-cartoon text-[#78350f]">
                     <tr>
-                      <th class="py-2.5 px-3">Operador</th>
-                      <th class="py-2.5 px-3">Prometeu na Mesa</th>
-                      <th class="py-2.5 px-3">Depositou na Urna</th>
-                      <th class="py-2.5 px-3">Veredito</th>
+                      <th class="py-2.5 px-3">Membro do Comitê</th>
+                      <th class="py-2.5 px-3">Pontos Prometidos</th>
+                      <th class="py-2.5 px-3">Cota de Insumo</th>
+                      <th class="py-2.5 px-3">Ariary Ofertado</th>
                     </tr>
                   </thead>
                   <tbody>
-                    ${auditRows}
+                    ${promiseRows}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            ${segregatedAuditHtml}
 
             <div class="flex justify-end pt-3 border-t-2 border-[#2b180d]/15">
               <button onclick="finishRound()" class="cartoon-btn px-8 py-3.5 bg-[#e29547] hover:bg-[#d97706] text-white text-base shadow-[0_5px_0_#b45309]">
@@ -2918,7 +3496,10 @@ def build_game_html():
 
       // ================= FASE 6: FIM DE PARTIDA =================
       else if (gameState.stage === 'GAME_OVER') {
-        const bankerWon = gameState.bankerScore >= 4 || (gameState.bankerScore > gameState.internScore);
+        // Regra Oficial de Vitória (Manual v14):
+        // Primeiro time a atingir 4 pontos vence imediatamente (Melhor de 7).
+        // Se ao término das 7 rodadas houver empate 3x3, a vitória é DOS ESTAGIÁRIOS INFILTRADOS (o Banco falhou em aprovar a maioria dos contratos).
+        const bankerWon = gameState.bankerScore >= 4 || (gameState.bankerScore > gameState.internScore && gameState.bankerScore >= 4);
         const winnerTitle = bankerWon ? '🏆 VITÓRIA DO CONSELHO BTG!' : '💥 VITÓRIA DOS INFILTRADOS!';
         const winColor = bankerWon ? 'bg-[#dcfce7] text-[#166534] border-[#15803d]' : 'bg-[#fee2e2] text-[#991b1b] border-[#dc2626]';
 
@@ -2941,6 +3522,7 @@ def build_game_html():
             <div class="inline-block p-4 rounded-3xl border-4 ${winColor} shadow-[0_8px_0_#2b180d]">
               <h2 class="font-cartoon text-3xl md:text-4xl font-bold">${winnerTitle}</h2>
               <p class="text-sm font-cartoon mt-1">Placar Final: Banqueiros ${gameState.bankerScore} x ${gameState.internScore} Infiltrados</p>
+              ${gameState.bankerScore === 3 && gameState.internScore === 3 ? '<p class="text-xs font-cartoon text-[#991b1b] font-bold mt-1">Regra de Desempate Oficial: O empate 3x3 ao fim de 7 rodadas favorece a Oposição (Vitória dos Estagiários).</p>' : ''}
             </div>
 
             <div class="space-y-3 max-w-xl mx-auto text-left">
