@@ -326,11 +326,19 @@ class PlayerAI:
 
             # Penalidade para preservar Safiras e Wilds para o Tier 6/7
             has_safira = any(c.card_type in (CardType.SF, CardType.WILD) for c in cb)
-            safira_penalty = 15 if (has_safira and contract.req_commodity != CardType.SF and contract.tier < 6) else 0
+            safira_penalty = 30 if (has_safira and contract.req_commodity != CardType.SF and contract.tier < 6) else 0
 
             # Penalidade para preservar Titânio se não for o insumo exigido
             has_titanio = any(c.card_type == CardType.TI for c in cb)
-            titanio_penalty = 8 if (has_titanio and not is_responsible_for_req and contract.req_commodity != CardType.TI and contract.tier < 5) else 0
+            if has_titanio and not is_responsible_for_req and contract.req_commodity != CardType.TI:
+                if round_num <= 2:
+                    titanio_penalty = 25  # Poupado para o Tier 3 (Sindicato de Titânio exige 2x Titânio)
+                elif contract.tier < 5:
+                    titanio_penalty = 12
+                else:
+                    titanio_penalty = 0
+            else:
+                titanio_penalty = 0
 
             token_penalty = tokens_to_use * 2
 

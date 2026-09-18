@@ -23,7 +23,7 @@ for label, bp_mode, ip_mode in [
     forced_total = 0
     lockouts = 0
     
-    n_games = 2000
+    n_games = 1000
     for i in range(n_games):
         res = simulate_single_match(i, seed=20260900 + i, banker_profile=bp_mode, intern_profile=ip_mode)
         if res['winner'] == 'Banqueiro':
@@ -35,9 +35,9 @@ for label, bp_mode, ip_mode in [
         if res['intern_lockout']:
             lockouts += 1
 
-    print(f"\n[{label}]")
-    print(f"  Vitórias Banqueiros : {b_wins:4d} ({b_wins/n_games*100:5.1f}%)")
-    print(f"  Vitórias Estagiários: {i_wins:4d} ({i_wins/n_games*100:5.1f}%)")
-    print(f"  Média de Vetos/Jogo : {vetoes_total/n_games:4.2f}")
-    print(f"  Comitês Forçados    : {forced_total:4d} ({forced_total/n_games*100:5.1f}% das partidas)")
-    print(f"  Taxa de Lockout     : {lockouts:4d} ({lockouts/n_games*100:5.1f}%)")
+    print(f"\n[{label}]", flush=True)
+    print(f"  Vitórias Banqueiros : {b_wins:4d} ({b_wins/n_games*100:5.1f}%)", flush=True)
+    print(f"  Vitórias Estagiários: {i_wins:4d} ({i_wins/n_games*100:5.1f}%)", flush=True)
+    print(f"  Média de Vetos/Jogo : {vetoes_total/n_games:4.2f}", flush=True)
+    print(f"  Comitês Forçados    : {forced_total:4d} ({forced_total/n_games*100:5.1f}% das partidas)", flush=True)
+    print(f"  Taxa de Lockout     : {lockouts:4d} ({lockouts/n_games*100:5.1f}%)", flush=True)

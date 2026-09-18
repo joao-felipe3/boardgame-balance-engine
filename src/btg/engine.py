@@ -102,12 +102,14 @@ def choose_optimal_committee(
 
         total_declared = sum(declarations[pid].claimed_value for pid in comm)
         is_viable = (total_declared >= contract.target_value)
-        avg_sus = sum(chair.suspicions[pid] for pid in comm if pid != chair.id) / len(comm)
+        partners = [pid for pid in comm if pid != chair.id]
+        avg_sus = sum(chair.suspicions[pid] for pid in partners) / len(partners) if partners else 0.0
         has_chair = (chair.id in comm)
         bench_count = sum(1 for pid in comm if declarations[pid].prefers_bench)
-        passed_set = passed_members or set()
-        # Membros não testados (nem passaram missão nem são de alta confiança comprovada):
-        untested_count = sum(1 for pid in comm if pid != chair.id and pid not in passed_set and chair.suspicions[pid] >= 0.25)
+        # Membros não comprovados (nunca passaram missão com sucesso):
+        untested_count = sum(1 for pid in comm if pid != chair.id and pid not in passed_members)
+        # Intrusos com suspeita neutra ou ativa (>= 0.39):
+        intruders_count = sum(1 for pid in comm if pid != chair.id and chair.suspicions[pid] >= 0.39)
 
         # Penalidade por membros em par de conflito ou acusados abertos
         conflict_penalty = 0
@@ -123,6 +125,16 @@ def choose_optimal_committee(
 
         traitor_count = sum(1 for pid in comm if pid in chair.known_traitors or chair.suspicions[pid] >= 0.80)
 
+        total_tokens = sum(declarations[pid].tokens_offered for pid in comm)
+        fatigue_count = sum(1 for pid in comm if players[pid].consecutive_rounds >= 2)
+        public_req_count = sum(
+            1 for pid in comm
+            if contract.req_commodity is not None and (
+                contract.req_commodity in players[pid].public_known_cards or
+                CardType.WILD in players[pid].public_known_cards
+            )
+        )
+
         evaluated_comms.append({
             'comm': list(comm),
             'supplier_ids': supplier_ids,
@@ -133,19 +145,27 @@ def choose_optimal_committee(
             'has_chair': has_chair,
             'bench_count': bench_count,
             'untested_count': untested_count,
+            'intruders_count': intruders_count,
             'conflict_penalty': conflict_penalty,
             'traitor_count': traitor_count,
-            'total_declared': total_declared
+            'total_declared': total_declared,
+            'total_tokens': total_tokens,
+            'fatigue_count': fatigue_count,
+            'public_req_count': public_req_count
         })
 
     if getattr(chair, 'profile', None) == BankerProfile.CONSERVATIVE:
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
             x['conflict_penalty'],
-            round(x['avg_sus'], 2),
-            x['untested_count'],
             not x['has_req_coverage'],
             not x['is_viable'],
+            x['intruders_count'],
+            round(x['avg_sus'], 3),
+            x['untested_count'],
+            x['fatigue_count'],
+            -x['public_req_count'],
+            -x['total_tokens'],
             not x['has_chair'],
             x['bench_count'],
             -x['total_declared']
@@ -154,9 +174,13 @@ def choose_optimal_committee(
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
             x['conflict_penalty'],
-            round(x['avg_sus'], 2),
             not x['has_req_coverage'],
             not x['is_viable'],
+            x['intruders_count'],
+            round(x['avg_sus'], 3),
+            -x['total_tokens'],
+            x['fatigue_count'],
+            -x['public_req_count'],
             -x['total_declared'],
             x['untested_count'],
             x['bench_count'],
@@ -166,10 +190,14 @@ def choose_optimal_committee(
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
             x['conflict_penalty'],
-            round(x['avg_sus'], 2),
-            x['untested_count'],
             not x['has_req_coverage'],
             not x['is_viable'],
+            x['intruders_count'],
+            round(x['avg_sus'], 3),
+            x['untested_count'],
+            x['fatigue_count'],
+            -x['total_tokens'],
+            -x['public_req_count'],
             x['bench_count'],
             not x['has_chair'],
             -x['total_declared']
@@ -178,13 +206,17 @@ def choose_optimal_committee(
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],         # 1º: zero traidores conhecidos
             x['conflict_penalty'],      # 2º: evitar membros em conflito aberto
-            round(x['avg_sus'], 2),     # 3º: menor suspeita média entre os membros
-            x['untested_count'],        # 4º: priorizar operadores já comprovados (núcleo de confiança)
-            not x['has_req_coverage'],  # 5º: cobertura do insumo obrigatória
-            not x['is_viable'],         # 6º: viabilidade de liquidez total declarada
-            x['bench_count'],           # 7º: evitar membros que preferem o banco
-            not x['has_chair'],         # 8º: preferência por incluir o Chairman
-            -x['total_declared']        # 9º: maior valor total declarado como desempate
+            not x['has_req_coverage'],  # 3º: cobertura do insumo necessária
+            not x['is_viable'],         # 4º: viabilidade matemática de liquidez (atingir a meta!)
+            x['intruders_count'],       # 5º: priorizar bancada leal (zero intrusos desconhecidos/suspeitos)
+            round(x['avg_sus'], 3),     # 6º: menor suspeita média real exata
+            x['untested_count'],        # 7º: priorizar operadores já comprovados em missões passadas
+            x['fatigue_count'],         # 8º: evitar fadiga econômica excessiva
+            -x['total_tokens'],         # 9º: priorizar tokens de liquidez reais acumulados do banco
+            -x['public_req_count'],     # 10º: priorizar insumos verificados no balcão aberto
+            x['bench_count'],           # 11º: evitar membros que preferem o banco
+            not x['has_chair'],         # 12º: preferência por incluir o Chairman
+            -x['total_declared']        # 13º: maior valor total declarado como desempate
         ))
 
     best = evaluated_comms[0]
@@ -565,7 +597,7 @@ def simulate_single_match(
             # Votação com cautela (Veto do banqueiro injustiçado / Disciplina de Conflito)
             votes = {}
             for p in players:
-                if p.role == Role.BANKER and conflict_pairs and consecutive_vetoes < 2:
+                if p.role == Role.BANKER and conflict_pairs and consecutive_vetoes < 1:
                     # Se o banqueiro faz parte de um par de conflito e seu rival foi colocado sem ele: veto automático
                     in_rivalry_without_self = False
                     for cp in conflict_pairs:
@@ -678,16 +710,10 @@ def simulate_single_match(
                 p.accumulate_holding_interest()
                 if p.role == Role.BANKER:
                     preferred = None
-                    if getattr(p, 'profile', None) == BankerProfile.STRATEGIST:
-                        for ct in [CardType.SF, CardType.WILD, contract.req_commodity, CardType.TI]:
-                            if ct is not None and ct in deck.open_market:
-                                preferred = ct
-                                break
-                    else:
-                        for ct in [contract.req_commodity, CardType.WILD, CardType.SF, CardType.TI]:
-                            if ct is not None and ct in deck.open_market:
-                                preferred = ct
-                                break
+                    for ct in [CardType.WILD, CardType.SF, CardType.TI, CardType.CO]:
+                        if ct is not None and ct in deck.open_market:
+                            preferred = ct
+                            break
                     if preferred:
                         c = deck.draw_from_market(preferred)
                         p.public_known_cards.append(preferred)
@@ -696,6 +722,9 @@ def simulate_single_match(
                 else:
                     c = deck.draw_blind(1)[0]
                 p.hand.append(c)
+        for p in players:
+            if len(p.hand) == 0:
+                p.hand.append(deck.draw_blind(1)[0])
 
         comm_objs = [players[pid] for pid in approved_committee]
 
@@ -812,11 +841,7 @@ def simulate_single_match(
                         if cid != bp.id and cid not in bp.known_traitors:
                             # Calibração Bayesiana Real por Dificuldade do Tier:
                             if contract.tier == 1:
-                                # Tier 1 é abertura sem insumo obrigatório: qualquer um passa facilmente.
-                                if bp.id in approved_committee:
-                                    bp.suspicions[cid] = min(0.32, bp.suspicions[cid])
-                                else:
-                                    bp.suspicions[cid] = min(0.36, bp.suspicions[cid])
+                                bp.suspicions[cid] = min(0.32, bp.suspicions[cid])
                             elif contract.tier == 2:
                                 # Tier 2 exige Cobalto: comprovação intermediária
                                 if bp.id in approved_committee:
@@ -886,7 +911,7 @@ def simulate_single_match(
                                 bp.suspicions[op.id] = min(0.35, bp.suspicions[op.id])
 
             # Caso 2: Dedução Assimétrica de Infiltração em Veteranos de Rodadas Anteriores
-            elif len(newcomers) == 1 and len(veterans) >= 1:
+            elif len(newcomers) == 1 and len(veterans) >= 1 and (has_toxic or (contract.req_commodity is not None and not has_req)) and all(bp.suspicions[vid] <= 0.15 for vid in veterans for bp in players if bp.role == Role.BANKER and bp.id != vid):
                 culprit = newcomers[0]
                 public_accused.add(culprit)
                 for bp in players:
@@ -904,20 +929,29 @@ def simulate_single_match(
                             if bp.id != vid:
                                 bp.suspicions[vid] = min(0.12, bp.suspicions[vid])
 
-            # Caso 3: Falha em comitê de 2 membros sem fornecedor único identificável (Par de Conflito legítimo)
+            # Caso 3: Falha em comitê de 2 membros
             elif len(approved_committee) == 2:
-                conflict_pairs.append(set(approved_committee))
-                for bp in players:
-                    if bp.role == Role.BANKER:
-                        if bp.id in approved_committee:
-                            partner_id = partner_of[bp.id]
-                            bp.suspicions[partner_id] = 1.00
-                            bp.known_traitors.add(partner_id)
-                            public_accused.add(partner_id)
-                        else:
-                            # Para os observadores do banco, é um conflito estrito 50/50:
+                if has_toxic or (contract.req_commodity is not None and not has_req):
+                    # Sabotagem real comprovada (Ativo Tóxico ou Quebra de Insumo): Par de Conflito legítimo
+                    conflict_pairs.append(set(approved_committee))
+                    for bp in players:
+                        if bp.role == Role.BANKER:
+                            if bp.id in approved_committee:
+                                partner_id = partner_of[bp.id]
+                                bp.suspicions[partner_id] = 1.00
+                                bp.known_traitors.add(partner_id)
+                                public_accused.add(partner_id)
+                            else:
+                                for cid in approved_committee:
+                                    bp.suspicions[cid] = max(bp.suspicions[cid], 0.50)
+                else:
+                    # Falha puramente numérica de liquidez (ex: 1 Cobalto + 3 Titânio = 4 < 5)
+                    # Não houve Ativo Tóxico nem quebra de insumo. NÃO é par de conflito!
+                    for bp in players:
+                        if bp.role == Role.BANKER:
                             for cid in approved_committee:
-                                bp.suspicions[cid] = max(bp.suspicions[cid], 0.50)
+                                if cid != bp.id:
+                                    bp.suspicions[cid] = min(0.46, max(bp.suspicions[cid], 0.40))
 
                 # Dedução do Princípio da Casa dos Pombos (Pigeonhole):
                 # Se há 2 pares de conflito disjuntos cobrindo 4 jogadores, o 5º jogador é 100% Banqueiro!
@@ -945,17 +979,34 @@ def simulate_single_match(
                     else:
                         # 2 ou mais operadores prometeram insumo e a cota falhou:
                         conflict_pairs.append(set(sup_pids))
-                        public_accused.update(sup_pids)
-                        for bp in players:
-                            if bp.role == Role.BANKER:
-                                if bp.id in sup_pids:
-                                    other_sups = [sid for sid in sup_pids if sid != bp.id]
-                                    for osid in other_sups:
-                                        bp.suspicions[osid] = 1.00
-                                        bp.known_traitors.add(osid)
-                                else:
-                                    for sid in sup_pids:
-                                        bp.suspicions[sid] = max(bp.suspicions[sid], 0.78)
+                        veteran_sups = [sid for sid in sup_pids if sid in passed_members]
+                        newcomer_sups = [sid for sid in sup_pids if sid not in passed_members]
+
+                        if len(veteran_sups) >= 1 and len(newcomer_sups) == 1:
+                            culprit = newcomer_sups[0]
+                            public_accused.add(culprit)
+                            for bp in players:
+                                if bp.role == Role.BANKER:
+                                    if bp.id != culprit:
+                                        bp.suspicions[culprit] = 0.85
+                                        if bp.id in veteran_sups:
+                                            bp.suspicions[culprit] = 1.00
+                                            bp.known_traitors.add(culprit)
+                                    for vsid in veteran_sups:
+                                        if vsid != bp.id:
+                                            bp.suspicions[vsid] = min(0.35, bp.suspicions[vsid])
+                        else:
+                            # Conflito simétrico: não acusa todos publicamente
+                            for bp in players:
+                                if bp.role == Role.BANKER:
+                                    if bp.id in sup_pids:
+                                        other_sups = [sid for sid in sup_pids if sid != bp.id]
+                                        for osid in other_sups:
+                                            bp.suspicions[osid] = 1.00
+                                            bp.known_traitors.add(osid)
+                                    else:
+                                        for sid in sup_pids:
+                                            bp.suspicions[sid] = max(bp.suspicions[sid], 0.60)
 
                     # Isenção de insumo: membros fora de sup_pids não prometeram insumo!
                     non_sup_members = [cid for cid in approved_committee if cid not in sup_pids]
@@ -983,10 +1034,8 @@ def simulate_single_match(
                     if bp.role == Role.BANKER:
                         for op in players:
                             if op.id not in approved_committee and op.id != bp.id:
-                                if not has_played.get(op.id, False):
-                                    bp.suspicions[op.id] = max(0.42, bp.suspicions[op.id])
-                                else:
-                                    bp.suspicions[op.id] = max(0.05, bp.suspicions[op.id] - 0.03)
+                                if has_played.get(op.id, False):
+                                    bp.suspicions[op.id] = max(0.05, bp.suspicions[op.id] - 0.02)
 
         if record_trace:
             rounds_data.append({
