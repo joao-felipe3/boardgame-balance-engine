@@ -1,0 +1,241 @@
+{
+  "n_games": 20000,
+  "total_time_seconds": 33.56906461715698,
+  "banker_win_rate": 62.519999999999996,
+  "intern_win_rate": 37.480000000000004,
+  "avg_rounds": 5.5471,
+  "score_distribution": {
+    "4 x 0": 4521,
+    "3 x 4": 4249,
+    "2 x 4": 1867,
+    "1 x 4": 1372,
+    "4 x 3": 657,
+    "4 x 2": 3792,
+    "4 x 1": 3534,
+    "0 x 4": 8
+  },
+  "tier_funnel": {
+    "1": {
+      "played": 20000,
+      "success": 17791,
+      "intern_in": 10319,
+      "sab_in": 6099,
+      "fail_insumo": 1390,
+      "fail_valor": 819,
+      "fail_toxico": 0,
+      "tokens_spent": 0
+    },
+    "2": {
+      "played": 20000,
+      "success": 13990,
+      "intern_in": 8206,
+      "sab_in": 4145,
+      "fail_insumo": 1383,
+      "fail_valor": 4627,
+      "fail_toxico": 0,
+      "tokens_spent": 12603
+    },
+    "3": {
+      "played": 20000,
+      "success": 14018,
+      "intern_in": 10908,
+      "sab_in": 6858,
+      "fail_insumo": 3924,
+      "fail_valor": 1085,
+      "fail_toxico": 973,
+      "tokens_spent": 16049
+    },
+    "4": {
+      "played": 20000,
+      "success": 10301,
+      "intern_in": 12785,
+      "sab_in": 8064,
+      "fail_insumo": 6927,
+      "fail_valor": 754,
+      "fail_toxico": 2018,
+      "tokens_spent": 20213
+    },
+    "5": {
+      "played": 15471,
+      "success": 5944,
+      "intern_in": 13536,
+      "sab_in": 7458,
+      "fail_insumo": 5712,
+      "fail_valor": 2321,
+      "fail_toxico": 1494,
+      "tokens_spent": 17140
+    },
+    "6": {
+      "played": 10565,
+      "success": 5168,
+      "intern_in": 5220,
+      "sab_in": 2169,
+      "fail_insumo": 4220,
+      "fail_valor": 853,
+      "fail_toxico": 324,
+      "tokens_spent": 9029
+    },
+    "7": {
+      "played": 4906,
+      "success": 657,
+      "intern_in": 1944,
+      "sab_in": 971,
+      "fail_insumo": 2574,
+      "fail_valor": 1586,
+      "fail_toxico": 89,
+      "tokens_spent": 4103
+    }
+  },
+  "governance": {
+    "avg_vetoes": 2.6027,
+    "games_with_forced": 5670,
+    "r5_expansion_count": 11972
+  },
+  "economy": {
+    "avg_tokens_spent": 3.95685,
+    "avg_hand_end": 3.8443199999999997,
+    "total_toxic_played": 8278
+  },
+  "deduction": {
+    "lockout_count": 878,
+    "avg_unmasked": 0.5394,
+    "avg_intern_sus": 0.5311184999999999,
+    "avg_banker_sus": 0.19894400000000004
+  },
+  "by_intern_profile": {
+    "A (Agressivo / Blefe Imediato)": {
+      "wr_interns": 46.542620065375914,
+      "wr_bankers": 53.457379934624086,
+      "avg_rounds": 5.787025396027156,
+      "lockout_pct": 2.1372894141312546,
+      "avg_unmasked": 0.685692733215992,
+      "top_score": "4 x 1"
+    },
+    "B (Infiltracao Profunda / Sleeper)": {
+      "wr_interns": 38.89747552807831,
+      "wr_bankers": 61.10252447192169,
+      "avg_rounds": 5.657908294693457,
+      "lockout_pct": 3.4518289541473464,
+      "avg_unmasked": 0.6053580628541989,
+      "top_score": "4 x 2"
+    },
+    "C (Hedge / Retencao Economica)": {
+      "wr_interns": 35.48146305051007,
+      "wr_bankers": 64.51853694948993,
+      "avg_rounds": 5.665837272953471,
+      "lockout_pct": 2.836526499129137,
+      "avg_unmasked": 0.6163224682756905,
+      "top_score": "4 x 2"
+    },
+    "D (Oportunista / Camaleão Adaptativo)": {
+      "wr_interns": 32.43967828418231,
+      "wr_bankers": 67.5603217158177,
+      "avg_rounds": 5.318303680233975,
+      "lockout_pct": 6.921764562515233,
+      "avg_unmasked": 0.38020960272971,
+      "top_score": "4 x 0"
+    },
+    "E (Técnico / Falsa Idoneidade)": {
+      "wr_interns": 34.28713610350834,
+      "wr_bankers": 65.71286389649167,
+      "avg_rounds": 5.317491913411296,
+      "lockout_pct": 6.494152774321971,
+      "avg_unmasked": 0.41652152276685744,
+      "top_score": "4 x 0"
+    }
+  },
+  "by_banker_profile": {
+    "Equilibrado (Auditoria v14 Padrão)": {
+      "wr_bankers": 61.915146708961146,
+      "wr_interns": 38.084853291038854,
+      "avg_rounds": 5.543219666931007,
+      "avg_vetoes": 2.6250991276764473,
+      "avg_unmasked": 0.5178429817605076
+    },
+    "Conservador (Auditor Rígido / Veto Firme)": {
+      "wr_bankers": 63.133914421553094,
+      "wr_interns": 36.86608557844691,
+      "avg_rounds": 5.527733755942948,
+      "avg_vetoes": 2.6289619651347067,
+      "avg_unmasked": 0.5208003169572107
+    },
+    "Pragmático (Foco em Liquidez e Metas)": {
+      "wr_bankers": 62.660000000000004,
+      "wr_interns": 37.34,
+      "avg_rounds": 5.5332,
+      "avg_vetoes": 2.565,
+      "avg_unmasked": 0.5376
+    },
+    "Estrategista (Rotação de Banco e Ativos)": {
+      "wr_bankers": 62.36756316218419,
+      "wr_interns": 37.63243683781582,
+      "avg_rounds": 5.585167074164629,
+      "avg_vetoes": 2.5910757946210268,
+      "avg_unmasked": 0.5825183374083129
+    }
+  },
+  "by_matchup": {
+    "BALANCED vs A_AGGRESSIVE": 54.328358208955216,
+    "BALANCED vs B_SLEEPER": 61.933534743202415,
+    "BALANCED vs C_HEDGE": 63.98779247202442,
+    "BALANCED vs D_OPPORTUNIST": 64.18786692759295,
+    "BALANCED vs E_TECHNICIAN": 65.03362151777138,
+    "CONSERVATIVE vs A_AGGRESSIVE": 52.706843718079675,
+    "CONSERVATIVE vs B_SLEEPER": 60.123329907502566,
+    "CONSERVATIVE vs C_HEDGE": 66.57004830917874,
+    "CONSERVATIVE vs D_OPPORTUNIST": 70.11605415860735,
+    "CONSERVATIVE vs E_TECHNICIAN": 65.43330087633885,
+    "PRAGMATIC vs A_AGGRESSIVE": 50.30181086519114,
+    "PRAGMATIC vs B_SLEEPER": 60.2711157455683,
+    "PRAGMATIC vs C_HEDGE": 65.07936507936508,
+    "PRAGMATIC vs D_OPPORTUNIST": 69.59921798631477,
+    "PRAGMATIC vs E_TECHNICIAN": 67.61811023622047,
+    "STRATEGIST vs A_AGGRESSIVE": 56.45645645645646,
+    "STRATEGIST vs B_SLEEPER": 62.06896551724138,
+    "STRATEGIST vs C_HEDGE": 62.33635448136958,
+    "STRATEGIST vs D_OPPORTUNIST": 66.30859375,
+    "STRATEGIST vs E_TECHNICIAN": 64.70588235294117
+  },
+  "by_profile": {
+    "A (Agressivo / Blefe Imediato)": {
+      "wr_interns": 46.542620065375914,
+      "wr_bankers": 53.457379934624086,
+      "avg_rounds": 5.787025396027156,
+      "lockout_pct": 2.1372894141312546,
+      "avg_unmasked": 0.685692733215992,
+      "top_score": "4 x 1"
+    },
+    "B (Infiltracao Profunda / Sleeper)": {
+      "wr_interns": 38.89747552807831,
+      "wr_bankers": 61.10252447192169,
+      "avg_rounds": 5.657908294693457,
+      "lockout_pct": 3.4518289541473464,
+      "avg_unmasked": 0.6053580628541989,
+      "top_score": "4 x 2"
+    },
+    "C (Hedge / Retencao Economica)": {
+      "wr_interns": 35.48146305051007,
+      "wr_bankers": 64.51853694948993,
+      "avg_rounds": 5.665837272953471,
+      "lockout_pct": 2.836526499129137,
+      "avg_unmasked": 0.6163224682756905,
+      "top_score": "4 x 2"
+    },
+    "D (Oportunista / Camaleão Adaptativo)": {
+      "wr_interns": 32.43967828418231,
+      "wr_bankers": 67.5603217158177,
+      "avg_rounds": 5.318303680233975,
+      "lockout_pct": 6.921764562515233,
+      "avg_unmasked": 0.38020960272971,
+      "top_score": "4 x 0"
+    },
+    "E (Técnico / Falsa Idoneidade)": {
+      "wr_interns": 34.28713610350834,
+      "wr_bankers": 65.71286389649167,
+      "avg_rounds": 5.317491913411296,
+      "lockout_pct": 6.494152774321971,
+      "avg_unmasked": 0.41652152276685744,
+      "top_score": "4 x 0"
+    }
+  }
+}

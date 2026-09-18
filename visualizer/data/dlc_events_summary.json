@@ -1,17 +1,17 @@
 {
-  "total_games_per_regime": 30000,
-  "baseline_banker_wr": 46.19666666666667,
+  "total_games_per_regime": 2000,
+  "baseline_banker_wr": 61.150000000000006,
   "regimes": {
     "Base v14.0 (Sem DLC)": {
       "description": "🟢 [Controle Nominal]",
       "enable_dlc": false,
       "regime": "DICE_50",
-      "banker_wr": 46.2,
-      "intern_wr": 53.8,
+      "banker_wr": 61.15,
+      "intern_wr": 38.85,
       "wr_delta": 0.0,
-      "avg_rounds": 5.75,
-      "climax_r7_pct": 29.79,
-      "sweeps_pct": 14.61,
+      "avg_rounds": 5.55,
+      "climax_r7_pct": 24.45,
+      "sweeps_pct": 22.85,
       "avg_directives_per_game": 0.0,
       "category_distribution": {}
     },
@@ -19,74 +19,74 @@
       "description": "1 carta revelada a cada rodada",
       "enable_dlc": true,
       "regime": "ALWAYS",
-      "banker_wr": 52.53,
-      "intern_wr": 47.47,
-      "wr_delta": 6.33,
-      "avg_rounds": 5.74,
-      "climax_r7_pct": 31.11,
-      "sweeps_pct": 16.47,
-      "avg_directives_per_game": 5.74,
+      "banker_wr": 64.85,
+      "intern_wr": 35.15,
+      "wr_delta": 3.7,
+      "avg_rounds": 5.63,
+      "climax_r7_pct": 24.0,
+      "sweeps_pct": 18.2,
+      "avg_directives_per_game": 5.63,
       "category_distribution": {
-        "Compliance & Auditoria": 45361,
-        "Governança & Votação": 45348,
-        "Economia & Commodities": 63278,
-        "Estrutura Operacional": 18254
+        "Compliance & Auditoria": 2963,
+        "Governança & Votação": 2977,
+        "Economia & Commodities": 4136,
+        "Estrutura Operacional": 1185
       }
     },
     "Regime 2: Dado 1d6 (>=4 / 50%)": {
       "description": "Rola 1d6: ativa com 50% de chance",
       "enable_dlc": true,
       "regime": "DICE_50",
-      "banker_wr": 48.97,
-      "intern_wr": 51.03,
-      "wr_delta": 2.77,
-      "avg_rounds": 5.75,
-      "climax_r7_pct": 30.72,
-      "sweeps_pct": 15.55,
-      "avg_directives_per_game": 2.87,
+      "banker_wr": 63.3,
+      "intern_wr": 36.7,
+      "wr_delta": 2.15,
+      "avg_rounds": 5.61,
+      "climax_r7_pct": 26.05,
+      "sweeps_pct": 20.9,
+      "avg_directives_per_game": 2.85,
       "category_distribution": {
-        "Compliance & Auditoria": 22651,
-        "Governança & Votação": 22628,
-        "Economia & Commodities": 31722,
-        "Estrutura Operacional": 9150
+        "Compliance & Auditoria": 1512,
+        "Governança & Votação": 1511,
+        "Economia & Commodities": 2077,
+        "Estrutura Operacional": 594
       }
     },
     "Regime 3: Mid-Game (R3-R5)": {
       "description": "Ativa apenas nas rodadas críticas",
       "enable_dlc": true,
       "regime": "MIDGAME",
-      "banker_wr": 47.4,
-      "intern_wr": 52.6,
-      "wr_delta": 1.2,
-      "avg_rounds": 5.76,
-      "climax_r7_pct": 30.97,
-      "sweeps_pct": 14.91,
-      "avg_directives_per_game": 2.85,
+      "banker_wr": 61.4,
+      "intern_wr": 38.6,
+      "wr_delta": 0.25,
+      "avg_rounds": 5.62,
+      "climax_r7_pct": 25.3,
+      "sweeps_pct": 19.35,
+      "avg_directives_per_game": 2.81,
       "category_distribution": {
-        "Compliance & Auditoria": 22529,
-        "Governança & Votação": 22437,
-        "Economia & Commodities": 31461,
-        "Estrutura Operacional": 9099
+        "Compliance & Auditoria": 1503,
+        "Governança & Votação": 1503,
+        "Economia & Commodities": 2030,
+        "Estrutura Operacional": 577
       }
     },
     "Regime 4: Catch-Up (Pós-Derrota)": {
       "description": "Ativa apenas após derrota anterior",
       "enable_dlc": true,
       "regime": "CATCHUP",
-      "banker_wr": 47.93,
-      "intern_wr": 52.07,
-      "wr_delta": 1.73,
-      "avg_rounds": 5.78,
-      "climax_r7_pct": 31.5,
-      "sweeps_pct": 14.6,
-      "avg_directives_per_game": 2.16,
+      "banker_wr": 63.1,
+      "intern_wr": 36.9,
+      "wr_delta": 1.95,
+      "avg_rounds": 5.58,
+      "climax_r7_pct": 25.8,
+      "sweeps_pct": 22.15,
+      "avg_directives_per_game": 1.81,
       "category_distribution": {
-        "Compliance & Auditoria": 17124,
-        "Governança & Votação": 16915,
-        "Economia & Commodities": 23835,
-        "Estrutura Operacional": 6829
+        "Compliance & Auditoria": 974,
+        "Governança & Votação": 968,
+        "Economia & Commodities": 1313,
+        "Estrutura Operacional": 361
       }
     }
   },
-  "execution_time_seconds": 416.63
+  "execution_time_seconds": 41.42
 }

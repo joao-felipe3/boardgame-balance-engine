@@ -106,10 +106,9 @@ def choose_optimal_committee(
         avg_sus = sum(chair.suspicions[pid] for pid in partners) / len(partners) if partners else 0.0
         has_chair = (chair.id in comm)
         bench_count = sum(1 for pid in comm if declarations[pid].prefers_bench)
-        # Membros não comprovados (nunca passaram missão com sucesso):
-        untested_count = sum(1 for pid in comm if pid != chair.id and pid not in passed_members)
-        # Intrusos com suspeita neutra ou ativa (>= 0.39):
-        intruders_count = sum(1 for pid in comm if pid != chair.id and chair.suspicions[pid] >= 0.39)
+        # Incógnitas / membros não comprovados para o Chairman (sus >= 0.30 ou fora de passed_members):
+        untrusted_count = sum(1 for pid in comm if pid != chair.id and (chair.suspicions[pid] >= 0.30 or pid not in passed_members))
+        intruders_count = sum(1 for pid in comm if pid != chair.id and chair.suspicions[pid] >= 0.35)
 
         # Penalidade por membros em par de conflito ou acusados abertos
         conflict_penalty = 0
@@ -144,7 +143,7 @@ def choose_optimal_committee(
             'avg_sus': avg_sus,
             'has_chair': has_chair,
             'bench_count': bench_count,
-            'untested_count': untested_count,
+            'untrusted_count': untrusted_count,
             'intruders_count': intruders_count,
             'conflict_penalty': conflict_penalty,
             'traitor_count': traitor_count,
@@ -157,66 +156,62 @@ def choose_optimal_committee(
     if getattr(chair, 'profile', None) == BankerProfile.CONSERVATIVE:
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
+            not x['has_chair'],
             x['conflict_penalty'],
             not x['has_req_coverage'],
             not x['is_viable'],
-            x['intruders_count'],
+            x['untrusted_count'],       # Priorizar comitê puro leal ou com no máximo 1 teste
             round(x['avg_sus'], 3),
-            x['untested_count'],
+            -x['total_declared'],       # Maior folga para garantir meta
             x['fatigue_count'],
             -x['public_req_count'],
             -x['total_tokens'],
-            not x['has_chair'],
-            x['bench_count'],
-            -x['total_declared']
+            x['bench_count']
         ))
     elif getattr(chair, 'profile', None) == BankerProfile.PRAGMATIC:
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
+            not x['has_chair'],
             x['conflict_penalty'],
             not x['has_req_coverage'],
             not x['is_viable'],
-            x['intruders_count'],
+            x['untrusted_count'],
             round(x['avg_sus'], 3),
+            -x['total_declared'],
             -x['total_tokens'],
             x['fatigue_count'],
             -x['public_req_count'],
-            -x['total_declared'],
-            x['untested_count'],
-            x['bench_count'],
-            not x['has_chair']
+            x['bench_count']
         ))
     elif getattr(chair, 'profile', None) == BankerProfile.STRATEGIST:
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],
+            not x['has_chair'],
             x['conflict_penalty'],
             not x['has_req_coverage'],
             not x['is_viable'],
-            x['intruders_count'],
+            x['untrusted_count'],
             round(x['avg_sus'], 3),
-            x['untested_count'],
+            -x['total_declared'],
             x['fatigue_count'],
             -x['total_tokens'],
             -x['public_req_count'],
-            x['bench_count'],
-            not x['has_chair'],
-            -x['total_declared']
+            x['bench_count']
         ))
     else:
         evaluated_comms.sort(key=lambda x: (
             x['traitor_count'],         # 1º: zero traidores conhecidos
-            x['conflict_penalty'],      # 2º: evitar membros em conflito aberto
-            not x['has_req_coverage'],  # 3º: cobertura do insumo necessária
-            not x['is_viable'],         # 4º: viabilidade matemática de liquidez (atingir a meta!)
-            x['intruders_count'],       # 5º: priorizar bancada leal (zero intrusos desconhecidos/suspeitos)
-            round(x['avg_sus'], 3),     # 6º: menor suspeita média real exata
-            x['untested_count'],        # 7º: priorizar operadores já comprovados em missões passadas
-            x['fatigue_count'],         # 8º: evitar fadiga econômica excessiva
-            -x['total_tokens'],         # 9º: priorizar tokens de liquidez reais acumulados do banco
-            -x['public_req_count'],     # 10º: priorizar insumos verificados no balcão aberto
-            x['bench_count'],           # 11º: evitar membros que preferem o banco
-            not x['has_chair'],         # 12º: preferência por incluir o Chairman
-            -x['total_declared']        # 13º: maior valor total declarado como desempate
+            not x['has_chair'],         # 2º: Chairman leal SEMPRE se inclui para controle de variável
+            x['conflict_penalty'],      # 3º: evitar membros em conflito aberto
+            not x['has_req_coverage'],  # 4º: cobertura do insumo necessária
+            not x['is_viable'],         # 5º: viabilidade matemática de liquidez (atingir a meta!)
+            x['untrusted_count'],       # 6º: ISOLAMENTO DE VARIÁVEL! Priorizar 0 incógnitas (núcleo puro), depois 1 incógnita (teste controlado). Evitar 2+ incógnitas!
+            round(x['avg_sus'], 3),     # 7º: menor suspeita média real exata
+            -x['total_declared'],       # 8º: maior folga para bater a meta com segurança
+            x['fatigue_count'],         # 9º: evitar fadiga econômica excessiva
+            -x['total_tokens'],         # 10º: priorizar tokens de liquidez reais acumulados do banco
+            -x['public_req_count'],     # 11º: priorizar insumos verificados no balcão aberto
+            x['bench_count']            # 12º: evitar membros que preferem o banco
         ))
 
     best = evaluated_comms[0]
@@ -710,10 +705,23 @@ def simulate_single_match(
                 p.accumulate_holding_interest()
                 if p.role == Role.BANKER:
                     preferred = None
-                    for ct in [CardType.WILD, CardType.SF, CardType.TI, CardType.CO]:
+                    # Prioridade de Balcão Aberto:
+                    # 1. WILD (Coringa absoluto)
+                    # 2. Insumo exigido pelo contrato atual ou próximo que o banqueiro não possui
+                    next_req = ops[r_idx + 1].req_commodity if r_idx + 1 < len(ops) else None
+                    needed_reqs = [req for req in [contract.req_commodity, next_req] if req is not None]
+                    has_needed = any(any(c.card_type in (req, CardType.WILD) for c in p.hand) for req in needed_reqs)
+
+                    search_order = [CardType.WILD]
+                    if not has_needed:
+                        search_order.extend(needed_reqs)
+                    search_order.extend([CardType.SF, CardType.TI, CardType.VN, CardType.CO])
+
+                    for ct in search_order:
                         if ct is not None and ct in deck.open_market:
                             preferred = ct
                             break
+
                     if preferred:
                         c = deck.draw_from_market(preferred)
                         p.public_known_cards.append(preferred)
@@ -839,38 +847,59 @@ def simulate_single_match(
                 if bp.role == Role.BANKER:
                     for cid in approved_committee:
                         if cid != bp.id and cid not in bp.known_traitors:
-                            # Calibração Bayesiana Real por Dificuldade do Tier:
+                            # Calibração Bayesiana Real por Dificuldade e Custo do Tier:
                             if contract.tier == 1:
-                                bp.suspicions[cid] = min(0.32, bp.suspicions[cid])
+                                bp.suspicions[cid] = min(0.35, bp.suspicions[cid])
                             elif contract.tier == 2:
-                                # Tier 2 exige Cobalto: comprovação intermediária
                                 if bp.id in approved_committee:
-                                    bp.suspicions[cid] = min(0.18, bp.suspicions[cid])
+                                    bp.suspicions[cid] = min(0.22, bp.suspicions[cid])
                                 else:
-                                    bp.suspicions[cid] = min(0.24, bp.suspicions[cid])
+                                    bp.suspicions[cid] = min(0.28, bp.suspicions[cid])
+                            elif contract.tier in (3, 4):
+                                if bp.id in approved_committee:
+                                    bp.suspicions[cid] = min(0.16, bp.suspicions[cid])
+                                else:
+                                    bp.suspicions[cid] = min(0.22, bp.suspicions[cid])
+                            elif contract.tier == 5:
+                                if bp.id in approved_committee:
+                                    bp.suspicions[cid] = min(0.12, bp.suspicions[cid])
+                                else:
+                                    bp.suspicions[cid] = min(0.18, bp.suspicions[cid])
                             else:
-                                # Tiers 3+: comitês pesados com insumos nobres comprovam lealdade máxima
+                                # Tiers 6+: contratos de custo 2 cartas e metas pesadas
                                 if bp.id in approved_committee:
-                                    bp.suspicions[cid] = min(0.08, bp.suspicions[cid])
+                                    bp.suspicions[cid] = min(0.10, bp.suspicions[cid])
                                 else:
-                                    bp.suspicions[cid] = min(0.18, bp.suspicions[cid])
+                                    bp.suspicions[cid] = min(0.14, bp.suspicions[cid])
 
             if round_count == 2:
                 r2_passed_comm = list(approved_committee)
 
-            # Dedução de Vindicação (The Resistance / Sugestão C):
+            # Dedução de Vindicação Calibrada (The Resistance / Sem Falsa Acusação Cega):
             for cp in list(conflict_pairs):
                 v_members = [cid for cid in approved_committee if cid in cp]
-                if len(v_members) == 1:
+                if len(cp) == 2 and len(v_members) == 1:
                     vindicated_pid = v_members[0]
                     traitor_pid = next(other for other in cp if other != vindicated_pid)
                     for bp in players:
                         if bp.role == Role.BANKER:
-                            bp.suspicions[traitor_pid] = 1.00
-                            bp.known_traitors.add(traitor_pid)
-                            if bp.id != vindicated_pid:
-                                bp.suspicions[vindicated_pid] = max(0.05, bp.suspicions[vindicated_pid] - 0.20)
-                    public_accused.add(traitor_pid)
+                            # Se o próprio banqueiro foi quem passou a missão (ou se o vindicado já era comprovadamente leal <= 0.08):
+                            # Certeza matemática de que o rival do conflito é o traidor.
+                            is_proven_vindicated = (bp.id == vindicated_pid or bp.suspicions[vindicated_pid] <= 0.08)
+                            if is_proven_vindicated:
+                                bp.suspicions[traitor_pid] = 1.00
+                                bp.known_traitors.add(traitor_pid)
+                                if bp.id != vindicated_pid:
+                                    bp.suspicions[vindicated_pid] = max(0.05, bp.suspicions[vindicated_pid] - 0.20)
+                            else:
+                                # Se o membro que passou não é matematicamente comprovado (pode ter jogado camuflado):
+                                # Alivia moderadamente a suspeita do vindicado e eleva a do rival, mas SEM rotulá-lo como traidor absoluto 1.00
+                                bp.suspicions[vindicated_pid] = max(0.12, bp.suspicions[vindicated_pid] - 0.15)
+                                bp.suspicions[traitor_pid] = min(0.70, max(bp.suspicions[traitor_pid], 0.60))
+
+                    # Se algum banqueiro comprovou, adiciona aos acusados públicos
+                    if any(bp.role == Role.BANKER and bp.suspicions[traitor_pid] >= 0.95 for bp in players):
+                        public_accused.add(traitor_pid)
                     if vindicated_pid in public_accused:
                         public_accused.remove(vindicated_pid)
                     conflict_pairs.remove(cp)
@@ -882,58 +911,95 @@ def simulate_single_match(
             sup_pids = [promised_supplier] if isinstance(promised_supplier, int) else (list(promised_supplier) if promised_supplier else [])
             partner_of = {cid: next(other for other in approved_committee if other != cid) for cid in approved_committee} if len(approved_committee) == 2 else {}
 
-            # Caso 1: Falha por quebra de insumo com 1 fornecedor prometido (Traidor pego em flagrante)
-            if contract.req_commodity is not None and not has_req and len(sup_pids) == 1:
-                culprit = sup_pids[0]
-                public_accused.add(culprit)
-                innocent_partner = partner_of.get(culprit)
-                if innocent_partner is not None and innocent_partner in public_accused:
-                    public_accused.remove(innocent_partner)
+            # Caso 1: Falha por quebra de insumo (Fornecedor prometido não entregou)
+            submitted_req_count = sum(1 for c in submitted_cards if c.card_type in (contract.req_commodity, CardType.WILD)) if contract.req_commodity else 0
+            if contract.req_commodity is not None and not has_req and len(sup_pids) >= 1:
+                # Se apenas 1 fornecedor prometeu e não entregou:
+                if len(sup_pids) == 1:
+                    culprit = sup_pids[0]
+                    public_accused.add(culprit)
+                    innocent_partners = [cid for cid in approved_committee if cid != culprit]
+                    for ip in innocent_partners:
+                        if ip in public_accused:
+                            public_accused.remove(ip)
 
-                for bp in players:
-                    if bp.role == Role.BANKER:
-                        bp.suspicions[culprit] = 1.00
-                        bp.known_traitors.add(culprit)
-                        if innocent_partner is not None:
-                            bp.suspicions[innocent_partner] = min(0.12, bp.suspicions[innocent_partner])
-
-                        if conflict_pairs:
-                            for cp in list(conflict_pairs):
-                                if culprit in cp:
-                                    vindicated = next(other for other in cp if other != culprit)
-                                    bp.suspicions[vindicated] = max(0.05, bp.suspicions[vindicated] - 0.20)
-                                    conflict_pairs.remove(cp)
-
-                for bp in players:
-                    if bp.role == Role.BANKER:
-                        for op in players:
-                            if op.id not in (culprit, innocent_partner, bp.id):
-                                bp.suspicions[op.id] = min(0.35, bp.suspicions[op.id])
-
-            # Caso 2: Dedução Assimétrica de Infiltração em Veteranos de Rodadas Anteriores
-            elif len(newcomers) == 1 and len(veterans) >= 1 and (has_toxic or (contract.req_commodity is not None and not has_req)) and all(bp.suspicions[vid] <= 0.15 for vid in veterans for bp in players if bp.role == Role.BANKER and bp.id != vid):
-                culprit = newcomers[0]
-                public_accused.add(culprit)
-                for bp in players:
-                    if bp.role == Role.BANKER:
-                        if bp.id != culprit:
+                    for bp in players:
+                        if bp.role == Role.BANKER:
                             bp.suspicions[culprit] = 1.00
                             bp.known_traitors.add(culprit)
+                            for ip in innocent_partners:
+                                if bp.id != ip and ip not in bp.known_traitors:
+                                    bp.suspicions[ip] = min(0.18, bp.suspicions[ip])
+
                             if conflict_pairs:
                                 for cp in list(conflict_pairs):
                                     if culprit in cp:
                                         vindicated = next(other for other in cp if other != culprit)
                                         bp.suspicions[vindicated] = max(0.05, bp.suspicions[vindicated] - 0.20)
                                         conflict_pairs.remove(cp)
-                        for vid in veterans:
-                            if bp.id != vid:
-                                bp.suspicions[vid] = min(0.12, bp.suspicions[vid])
 
-            # Caso 3: Falha em comitê de 2 membros
+                    for bp in players:
+                        if bp.role == Role.BANKER:
+                            for op in players:
+                                if op.id not in (culprit, bp.id) and op.id not in innocent_partners:
+                                    bp.suspicions[op.id] = min(0.35, bp.suspicions[op.id])
+
+                # Se 2 fornecedores prometeram (ex: 2 Baunilhas):
+                elif len(sup_pids) == 2:
+                    p_a, p_b = sup_pids[0], sup_pids[1]
+                    innocent_partners = [cid for cid in approved_committee if cid not in sup_pids]
+                    for ip in innocent_partners:
+                        if ip in public_accused:
+                            public_accused.remove(ip)
+
+                    if submitted_req_count == 0:
+                        # NENHUM entregou! Ambos quebraram o contrato e são traidores!
+                        for culprit in [p_a, p_b]:
+                            public_accused.add(culprit)
+                            for bp in players:
+                                if bp.role == Role.BANKER:
+                                    bp.suspicions[culprit] = 1.00
+                                    bp.known_traitors.add(culprit)
+                    else:
+                        # Exatamente 1 entregou e 1 quebrou:
+                        # Se o Banqueiro bp for um dos fornecedores, ele sabe se entregou ou não!
+                        for bp in players:
+                            if bp.role == Role.BANKER:
+                                if bp.id in sup_pids:
+                                    other_sup = p_b if bp.id == p_a else p_a
+                                    bp.suspicions[other_sup] = 1.00
+                                    bp.known_traitors.add(other_sup)
+                                    public_accused.add(other_sup)
+                                else:
+                                    # Para quem está de fora: só condena se 1 fornecedor for matematicamente comprovado (<= 0.08)
+                                    proven_sups = [sid for sid in sup_pids if bp.suspicions[sid] <= 0.08]
+                                    if len(proven_sups) == 1:
+                                        traitor_sup = next(sid for sid in sup_pids if sid not in proven_sups)
+                                        bp.suspicions[traitor_sup] = 1.00
+                                        bp.known_traitors.add(traitor_sup)
+                                        public_accused.add(traitor_sup)
+                                    else:
+                                        # Ambos não comprovados: par de conflito legítimo
+                                        bp.suspicions[p_a] = min(0.70, max(bp.suspicions[p_a], 0.60))
+                                        bp.suspicions[p_b] = min(0.70, max(bp.suspicions[p_b], 0.60))
+                        
+                        sup_set = set(sup_pids)
+                        if sup_set not in conflict_pairs:
+                            conflict_pairs.append(sup_set)
+
+                    for bp in players:
+                        if bp.role == Role.BANKER:
+                            for ip in innocent_partners:
+                                if bp.id != ip and ip not in bp.known_traitors:
+                                    bp.suspicions[ip] = min(0.18, bp.suspicions[ip])
+
+            # Caso 2: Falha em comitê de 2 membros
             elif len(approved_committee) == 2:
                 if has_toxic or (contract.req_commodity is not None and not has_req):
                     # Sabotagem real comprovada (Ativo Tóxico ou Quebra de Insumo): Par de Conflito legítimo
-                    conflict_pairs.append(set(approved_committee))
+                    comm_set = set(approved_committee)
+                    if comm_set not in conflict_pairs:
+                        conflict_pairs.append(comm_set)
                     for bp in players:
                         if bp.role == Role.BANKER:
                             if bp.id in approved_committee:
@@ -943,99 +1009,125 @@ def simulate_single_match(
                                 public_accused.add(partner_id)
                             else:
                                 for cid in approved_committee:
-                                    bp.suspicions[cid] = max(bp.suspicions[cid], 0.50)
+                                    bp.suspicions[cid] = min(0.70, max(bp.suspicions[cid], 0.55))
                 else:
                     # Falha puramente numérica de liquidez (ex: 1 Cobalto + 3 Titânio = 4 < 5)
-                    # Não houve Ativo Tóxico nem quebra de insumo. NÃO é par de conflito!
                     for bp in players:
                         if bp.role == Role.BANKER:
                             for cid in approved_committee:
                                 if cid != bp.id:
-                                    bp.suspicions[cid] = min(0.46, max(bp.suspicions[cid], 0.40))
+                                    bp.suspicions[cid] = min(0.45, max(bp.suspicions[cid], 0.38))
 
-                # Dedução do Princípio da Casa dos Pombos (Pigeonhole):
-                # Se há 2 pares de conflito disjuntos cobrindo 4 jogadores, o 5º jogador é 100% Banqueiro!
-                if len(conflict_pairs) >= 2:
-                    cp1, cp2 = conflict_pairs[0], conflict_pairs[1]
-                    if len(cp1.intersection(cp2)) == 0:
-                        all_cp_players = cp1.union(cp2)
-                        fifth_players = [p.id for p in players if p.id not in all_cp_players]
-                        if fifth_players:
-                            proven_banker = fifth_players[0]
-                            passed_members.add(proven_banker)
-                            for bp in players:
-                                if bp.role == Role.BANKER:
-                                    bp.suspicions[proven_banker] = 0.05
+            # Caso 3: Comitê de 3 ou mais membros (Dedução de Teste Controlado e Conflito de Resistência)
             else:
-                sup_pids = [promised_supplier] if isinstance(promised_supplier, int) else (list(promised_supplier) if promised_supplier else [])
-                if not has_req and sup_pids:
-                    if len(sup_pids) == 1:
-                        s_id = sup_pids[0]
-                        for bp in players:
-                            if bp.role == Role.BANKER and bp.id != s_id:
-                                bp.suspicions[s_id] = 1.00
-                                bp.known_traitors.add(s_id)
-                        public_accused.add(s_id)
-                    else:
-                        # 2 ou mais operadores prometeram insumo e a cota falhou:
-                        conflict_pairs.append(set(sup_pids))
-                        veteran_sups = [sid for sid in sup_pids if sid in passed_members]
-                        newcomer_sups = [sid for sid in sup_pids if sid not in passed_members]
+                toxic_count = sum(1 for c in submitted_cards if c.card_type == CardType.TOXIC)
+                new_cp = None
 
-                        if len(veteran_sups) >= 1 and len(newcomer_sups) == 1:
-                            culprit = newcomer_sups[0]
-                            public_accused.add(culprit)
-                            for bp in players:
-                                if bp.role == Role.BANKER:
-                                    if bp.id != culprit:
-                                        bp.suspicions[culprit] = 0.85
-                                        if bp.id in veteran_sups:
-                                            bp.suspicions[culprit] = 1.00
-                                            bp.known_traitors.add(culprit)
-                                    for vsid in veteran_sups:
-                                        if vsid != bp.id:
-                                            bp.suspicions[vsid] = min(0.35, bp.suspicions[vsid])
+                for bp in players:
+                    if bp.role != Role.BANKER:
+                        continue
+
+                    # Subcaso 3A: O Banqueiro estava dentro do comitê
+                    if bp.id in approved_committee:
+                        other_comm = [cid for cid in approved_committee if cid != bp.id]
+                        # Parceiro é de confiança se já passou em missão anterior ou tem suspeita <= 0.25 ou é comprovado
+                        trusted_partners = [cid for cid in other_comm if bp.suspicions[cid] <= 0.25 or (cid in passed_members and bp.suspicions[cid] < 0.35)]
+                        untrusted_members = [cid for cid in other_comm if cid not in trusted_partners]
+
+                        if has_toxic:
+                            if toxic_count >= len(other_comm):
+                                # Todos os outros membros jogaram tóxico!
+                                for cid in other_comm:
+                                    bp.suspicions[cid] = 1.00
+                                    bp.known_traitors.add(cid)
+                                    public_accused.add(cid)
+                            else:
+                                # Só condena a 1.00 se o parceiro for matematicamente comprovado (pigeonhole / inspeção <= 0.08)
+                                proven_partners = [cid for cid in other_comm if bp.suspicions[cid] <= 0.08]
+                                if len(proven_partners) == 1:
+                                    culprit = next(cid for cid in other_comm if cid not in proven_partners)
+                                    bp.suspicions[culprit] = 1.00
+                                    bp.known_traitors.add(culprit)
+                                    public_accused.add(culprit)
+                                elif len(trusted_partners) == 1 and len(untrusted_members) == 1:
+                                    # Teste controlado: a incógnita leva a maior suspeita (0.70), parceiro leal protegido de queima
+                                    suspect = untrusted_members[0]
+                                    tp = trusted_partners[0]
+                                    bp.suspicions[suspect] = min(0.75, max(bp.suspicions[suspect], 0.65))
+                                    bp.suspicions[tp] = min(0.35, bp.suspicions[tp] + 0.08)
+                                    new_cp = set(other_comm)
+                                else:
+                                    new_cp = set(other_comm)
+                                    for cid in other_comm:
+                                        bp.suspicions[cid] = min(0.70, max(bp.suspicions[cid], 0.58))
                         else:
-                            # Conflito simétrico: não acusa todos publicamente
-                            for bp in players:
-                                if bp.role == Role.BANKER:
-                                    if bp.id in sup_pids:
-                                        other_sups = [sid for sid in sup_pids if sid != bp.id]
-                                        for osid in other_sups:
-                                            bp.suspicions[osid] = 1.00
-                                            bp.known_traitors.add(osid)
+                            # Falha numérica de valor
+                            for cid in other_comm:
+                                bp.suspicions[cid] = min(0.48, bp.suspicions[cid] + 0.08)
+
+                    # Subcaso 3B: O Banqueiro estava fora do comitê (no banco)
+                    else:
+                        if has_toxic:
+                            proven_in_comm = [cid for cid in approved_committee if bp.suspicions[cid] <= 0.08]
+                            tp_in_comm = [cid for cid in approved_committee if bp.suspicions[cid] <= 0.25 or (cid in passed_members and bp.suspicions[cid] < 0.35)]
+                            untrusted_in_comm = [cid for cid in approved_committee if cid not in tp_in_comm]
+                            if len(proven_in_comm) == len(approved_committee) - 1 and toxic_count == 1:
+                                culprit = next(cid for cid in approved_committee if cid not in proven_in_comm)
+                                bp.suspicions[culprit] = 1.00
+                                bp.known_traitors.add(culprit)
+                                public_accused.add(culprit)
+                            elif len(untrusted_in_comm) == 1 and toxic_count == 1:
+                                suspect = untrusted_in_comm[0]
+                                bp.suspicions[suspect] = min(0.70, max(bp.suspicions[suspect], 0.60))
+                                for tp in tp_in_comm:
+                                    bp.suspicions[tp] = min(0.35, bp.suspicions[tp] + 0.06)
+                                new_cp = set(approved_committee)
+                            else:
+                                new_cp = set(untrusted_in_comm if untrusted_in_comm else approved_committee)
+                                for cid in approved_committee:
+                                    if cid in tp_in_comm:
+                                        bp.suspicions[cid] = min(0.35, bp.suspicions[cid] + 0.06)
                                     else:
-                                        for sid in sup_pids:
-                                            bp.suspicions[sid] = max(bp.suspicions[sid], 0.60)
-
-                    # Isenção de insumo: membros fora de sup_pids não prometeram insumo!
-                    non_sup_members = [cid for cid in approved_committee if cid not in sup_pids]
-                    for bp in players:
-                        if bp.role == Role.BANKER:
-                            for cid in non_sup_members:
-                                if cid != bp.id and cid not in bp.known_traitors:
-                                    bp.suspicions[cid] = min(0.52, bp.suspicions[cid] + 0.05)
-                else:
-                    # Falha por VALOR (insumo foi entregue ou missão não exige insumo):
-                    for bp in players:
-                        if bp.role == Role.BANKER:
-                            for sid in sup_pids:
-                                if sid != bp.id and sid not in bp.known_traitors:
-                                    bp.suspicions[sid] = max(0.05, bp.suspicions[sid] - 0.10)
-
-                            penalty = 0.30 if has_toxic else (0.15 if len(approved_committee) >= 4 else 0.20)
+                                        bp.suspicions[cid] = min(0.65, max(bp.suspicions[cid], 0.52))
+                        else:
                             for cid in approved_committee:
-                                if cid != bp.id and cid not in bp.known_traitors and cid not in sup_pids:
-                                    bp.suspicions[cid] = min(0.85, bp.suspicions[cid] + penalty)
-                                    if has_toxic:
-                                        public_accused.add(cid)
+                                bp.suspicions[cid] = min(0.45, bp.suspicions[cid] + 0.05)
 
+                if new_cp and new_cp not in conflict_pairs:
+                    conflict_pairs.append(new_cp)
+
+                # Alívio para quem ficou de fora do comitê e não participou da falha
                 for bp in players:
                     if bp.role == Role.BANKER:
                         for op in players:
                             if op.id not in approved_committee and op.id != bp.id:
                                 if has_played.get(op.id, False):
-                                    bp.suspicions[op.id] = max(0.05, bp.suspicions[op.id] - 0.02)
+                                    bp.suspicions[op.id] = max(0.05, bp.suspicions[op.id] - 0.03)
+
+            # Dedução do Princípio da Casa dos Pombos (Pigeonhole):
+            # 1. Se 2 traidores já são conhecidos, os demais 3 são 100% Banqueiros!
+            for bp in players:
+                if bp.role == Role.BANKER:
+                    if len(bp.known_traitors) >= 2:
+                        for other_p in players:
+                            if other_p.id not in bp.known_traitors and other_p.id != bp.id:
+                                bp.suspicions[other_p.id] = 0.05
+                                passed_members.add(other_p.id)
+
+            # 2. Se há 2 pares de conflito disjuntos cobrindo 4 jogadores, o 5º jogador é 100% Banqueiro!
+            if len(conflict_pairs) >= 2:
+                for i in range(len(conflict_pairs)):
+                    for j in range(i + 1, len(conflict_pairs)):
+                        cp1, cp2 = conflict_pairs[i], conflict_pairs[j]
+                        if len(cp1.intersection(cp2)) == 0 and len(cp1.union(cp2)) == 4:
+                            all_cp_players = cp1.union(cp2)
+                            fifth_players = [p.id for p in players if p.id not in all_cp_players]
+                            if fifth_players:
+                                proven_banker = fifth_players[0]
+                                passed_members.add(proven_banker)
+                                for bp in players:
+                                    if bp.role == Role.BANKER:
+                                        bp.suspicions[proven_banker] = 0.05
 
         if record_trace:
             rounds_data.append({

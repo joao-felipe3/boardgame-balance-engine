@@ -179,6 +179,10 @@ class PlayerAI:
                 for cp in conflict_pairs:
                     if sum(1 for pid in committee if pid in cp) > 1:
                         return False
+                # Rejeição de Proposta de Propositor em Conflito: não se aprova proposta de operador sob suspeita aberta
+                if consecutive_vetoes < 2 and proposer != self.id:
+                    if any(proposer in cp for cp in conflict_pairs):
+                        return False
 
             # 4. Consciência de Veto de Emergência (3ª tentativa antes de comitê forçado):
             # Na mesa real, na 3ª tentativa os banqueiros EVITAM a intervenção regulatória
@@ -193,25 +197,41 @@ class PlayerAI:
             else:
                 avg_sus = sum(self.suspicions[p] for p in committee) / len(committee)
 
-            is_trusted_core = (avg_sus <= 0.40 and self.suspicions[proposer] <= 0.48)
+            is_trusted_core = (avg_sus <= 0.38 and self.suspicions[proposer] <= 0.45)
 
-            # 6. Rejeição Técnica de Inviabilidade:
-            # Não veta por insumo ou pontuação se for o núcleo de confiança ou se já houve 1 veto prévio
-            if not is_trusted_core and consecutive_vetoes == 0:
-                if contract.req_commodity is not None and declarations:
+            # 6. Rejeição Técnica de Inviabilidade (Conversa Pré-Comitê):
+            # Na mesa real, a banca leal NÃO aprova proposta de estranhos que já nasce com déficit de meta ou sem insumos.
+            # Porém, se a proposta for a própria bancada leal (núcleo de confiança), NÃO se auto-vetam!
+            if not is_trusted_core and consecutive_vetoes < 2 and declarations:
+                if contract.req_commodity is not None:
                     suppliers_in_comm = [pid for pid in committee if declarations[pid].claims_req]
                     if len(suppliers_in_comm) < contract.req_commodity_count:
                         return False
 
-                if declarations:
-                    total_declared = sum(declarations[pid].claimed_value for pid in committee)
-                    if total_declared < contract.target_value - 3:
+                total_declared = sum(declarations[pid].claimed_value for pid in committee)
+                if total_declared < contract.target_value:
+                    return False
+
+            # 7. Isolamento de Suspeito / Teste Controlado (Conversa Pré-Comitê):
+            # Na mesa real, nunca se aprova comitê de 3 ou mais membros contendo 2 ou mais suspeitos/incógnitas (sus >= 0.30),
+            # pois impossibilita isolar o autor em caso de sabotagem. Aceita-se no máximo 1 suspeito para teste.
+            if len(committee) >= 3 and consecutive_vetoes < 2:
+                if self.id in committee:
+                    others = [p for p in committee if p != self.id]
+                    suspects_in_others = sum(1 for p in others if self.suspicions[p] >= 0.40)
+                    if suspects_in_others >= 2:
+                        return False
+                else:
+                    suspects_in_comm = sum(1 for p in committee if self.suspicions[p] >= 0.40)
+                    if suspects_in_comm >= 2:
+                        return False
+                    if proposer != self.id and self.suspicions[proposer] >= 0.48:
                         return False
 
             # Limiares de governança prudentes calibrados com dedução humana:
             if self.profile == BankerProfile.CONSERVATIVE:
                 prop_limit = 0.55
-                comm_with_self_limit = 0.48
+                comm_with_self_limit = 0.52
                 avg_comm_limit = 0.45
             elif self.profile == BankerProfile.PRAGMATIC:
                 prop_limit = 0.65
@@ -232,12 +252,6 @@ class PlayerAI:
             # Nenhum membro individual com suspeita quase comprovada (>= 0.75) pode ser aprovado
             for p in committee:
                 if p != self.id and self.suspicions[p] >= 0.75:
-                    return False
-
-            # Se o propositor é uma incógnita/suspeito (>= 0.50), ele não pode trazer outro operador suspeito (>= 0.50)
-            if proposer != self.id and self.suspicions[proposer] >= 0.50:
-                suspect_in_comm = sum(1 for p in committee if p != self.id and self.suspicions[p] >= 0.50)
-                if suspect_in_comm >= 2:
                     return False
 
             if self.id in committee:
@@ -280,11 +294,17 @@ class PlayerAI:
         """Aporte leal e otimizado com Gestão Cooperativa de Carteira (sem overkill)."""
         cost = contract.cost_per_player
         pos_cards = [c for c in self.hand if c.card_type != CardType.TOXIC]
-        if not pos_cards:
-            return self.hand[:cost], 0, sum(c.base_value for c in self.hand[:cost])
+        if self.role == Role.BANKER:
+            # Banqueiros leais NUNCA submetem ativos tóxicos na urna
+            if not pos_cards:
+                return [], 0, 0
+            if len(pos_cards) < cost:
+                return pos_cards, 0, sum(c.base_value for c in pos_cards)
 
         valid_combos = list(itertools.combinations(pos_cards, cost))
         if not valid_combos:
+            if self.role == Role.BANKER:
+                return pos_cards, 0, sum(c.base_value for c in pos_cards)
             valid_combos = list(itertools.combinations(self.hand, cost))
         if not valid_combos:
             return self.hand[:cost], 0, sum(c.base_value for c in self.hand[:cost])

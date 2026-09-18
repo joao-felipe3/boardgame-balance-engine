@@ -3,71 +3,71 @@
   "entropy_decay_curve_by_round": [
     2.5849625007211556,
     2.5731684420697523,
-    2.5547401069232305,
-    2.318076532325536,
-    1.9961103609779536,
-    1.6560656813167463,
-    1.5068395935434904,
-    1.3695321025932714
+    2.5586703279383527,
+    2.463045675057421,
+    2.1968995286033253,
+    1.9619221637758142,
+    1.8908143402140773,
+    1.8769023163672802
   ],
   "camouflage_efficiency_by_profile": {
     "A (Agressivo / Blefe Imediato)": {
-      "avg_final_entropy": 1.644056889317979,
-      "bits_preserved_pct": 63.60080228859483,
-      "collapsed_pct": 6.0
+      "avg_final_entropy": 1.9910494899395352,
+      "bits_preserved_pct": 77.02430845260115,
+      "collapsed_pct": 1.0
     },
     "B (Infiltracao Profunda / Sleeper)": {
-      "avg_final_entropy": 1.6119446428101105,
-      "bits_preserved_pct": 62.358531017777175,
-      "collapsed_pct": 7.166666666666667
+      "avg_final_entropy": 1.9536508039785319,
+      "bits_preserved_pct": 75.57752978751142,
+      "collapsed_pct": 1.8333333333333333
     },
     "C (Hedge / Retencao Economica)": {
-      "avg_final_entropy": 1.625759562915137,
-      "bits_preserved_pct": 62.89296508021221,
-      "collapsed_pct": 7.666666666666666
+      "avg_final_entropy": 1.9935798337106374,
+      "bits_preserved_pct": 77.12219551171307,
+      "collapsed_pct": 1.0
     },
     "D (Oportunista / Camaleão Adaptativo)": {
-      "avg_final_entropy": 1.6487949572042757,
-      "bits_preserved_pct": 63.78409577486299,
-      "collapsed_pct": 6.333333333333334
+      "avg_final_entropy": 1.970660533385898,
+      "bits_preserved_pct": 76.23555594466536,
+      "collapsed_pct": 1.0
     },
     "E (Técnico / Falsa Idoneidade)": {
-      "avg_final_entropy": 1.6306126895932473,
-      "bits_preserved_pct": 63.0807096481414,
-      "collapsed_pct": 5.5
+      "avg_final_entropy": 1.9560125748353252,
+      "bits_preserved_pct": 75.66889555611095,
+      "collapsed_pct": 1.6666666666666667
     }
   },
   "top_information_leakage_events": [
     {
-      "event": "Comitê 3 (Sabotado | 0 Infiltrados)",
-      "avg_gain": 0.47128134907389974,
-      "occurrences": 354
-    },
-    {
       "event": "Comitê 4 (Aprovado | 1 Infiltrado)",
-      "avg_gain": 0.388718296562656,
-      "occurrences": 716
+      "avg_gain": 0.35727925153109047,
+      "occurrences": 614
     },
     {
       "event": "Comitê 4 (Sabotado | 1 Infiltrado)",
-      "avg_gain": 0.3741614854191803,
-      "occurrences": 1029
+      "avg_gain": 0.3167317685604772,
+      "occurrences": 1087
+    },
+    {
+      "event": "Comitê 3 (Sabotado | 0 Infiltrados)",
+      "avg_gain": 0.2449156106655772,
+      "occurrences": 707
     },
     {
       "event": "Comitê 3 (Aprovado | 0 Infiltrados)",
-      "avg_gain": 0.34330899555126304,
-      "occurrences": 1910
+      "avg_gain": 0.19572944216624963,
+      "occurrences": 3025
+    },
+    {
+      "event": "Comitê 4 (Sabotado | 2 Infiltrados)",
+      "avg_gain": 0.17802573918188144,
+      "occurrences": 115
     },
     {
       "event": "Comitê 3 (Sabotado | 1 Infiltrado)",
-      "avg_gain": 0.291720482667077,
-      "occurrences": 3580
-    },
-    {
-      "event": "Comitê 3 (Aprovado | 2 Infiltrados)",
-      "avg_gain": 0.2785547395414582,
-      "occurrences": 163
+      "avg_gain": 0.1669553727577926,
+      "occurrences": 3214
     }
   ],
-  "total_time_seconds": 10.627800941467285
+  "total_time_seconds": 15.524823188781738
 }
