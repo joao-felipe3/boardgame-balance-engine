@@ -852,6 +852,9 @@
       inspectedPlayerCard: null, // Carta revelada pela Inspeção de Carteira
       revealedCvmCard: null, // Carta auditada pela CVM no cofre
 
+      publicAccused: [], // Array de IDs de operadores comprovadamente culpados (suspeita 1.0)
+      conflictPairs: [], // Array de pares [idA, idB] em conflito direto de insumo
+      vindications: {}, // id -> boolean se foi vindicado com sucesso no comitê
       stage: 'SETUP', // SETUP, DICE_ROLL, PROPOSAL, DELIBERATION, VOTING, DEPOSIT, REVEAL, BENCH_DIVIDEND, GAME_OVER
       proposedCommittee: [],
       designatedSupplier: null,
@@ -1495,6 +1498,9 @@ function createShuffledDeck() {
       gameState.quarantinePlayerId = null;
       gameState.inspectedPlayerCard = null;
       gameState.revealedCvmCard = null;
+      gameState.publicAccused = [];
+      gameState.conflictPairs = [];
+      gameState.vindications = {};
 
       // Atribuição de papéis (3 Banqueiros, 2 Estagiários no total da mesa)
       let humanRole = userRolePreference;
@@ -1679,24 +1685,83 @@ function createShuffledDeck() {
         gameState.proposedCommittee = [0]; // Inclui a si mesmo por padrão
         gameState.designatedSupplier = 0;
       } else {
-        // Bot é o Presidente: se for Banqueiro, escolhe membros de menor suspeita no seu dossiê!
+        // Bot é o Presidente: se for Banqueiro, seleção estratégica e dedutiva (alinhada a engine.py):
+        const isBankerChair = gameState.roles[gameState.chairId] === 'Banqueiro';
         let pool = [gameState.chairId];
         let others = [0, 1, 2, 3, 4].filter(id => id !== gameState.chairId && id !== gameState.quarantinePlayerId);
         
-        const isBankerChair = gameState.roles[gameState.chairId] === 'Banqueiro';
-        if (isBankerChair && gameState.botSuspicions[gameState.chairId]) {
-          others.sort((a, b) => {
-            const susA = gameState.botSuspicions[gameState.chairId][a] || 0.40;
-            const susB = gameState.botSuspicions[gameState.chairId][b] || 0.40;
-            return susA - susB;
-          });
-        } else {
-          others.sort(() => Math.random() - 0.5);
-        }
+        if (isBankerChair) {
+          // 1. Exclui operadores publicamente acusados de traição (publicAccused)
+          others = others.filter(id => !(gameState.publicAccused && gameState.publicAccused.includes(id)));
 
-        pool = pool.concat(others.slice(0, needed - 1));
-        gameState.proposedCommittee = pool;
-        gameState.designatedSupplier = pool[0];
+          // 2. Ordena os demais candidatos por menor suspeita no dossiê do Chairman
+          const susDict = gameState.botSuspicions[gameState.chairId] || {};
+          others.sort((a, b) => (susDict[a] || 0.40) - (susDict[b] || 0.40));
+
+          // 3. Se o contrato exige commodity, identifica quem garante a cota
+          let chosenSupplier = null;
+          const chairHand = gameState.hands[gameState.chairId] || [];
+          const reqKey = contract.req_commodity ? contract.req_commodity.split(' ')[0] : null;
+          const chairHasComm = reqKey && chairHand.some(c => c.type === 'WILD' || c.name.includes(reqKey));
+
+          if (chairHasComm) {
+            chosenSupplier = gameState.chairId;
+          } else if (reqKey) {
+            // Busca candidato com menor suspeita que possui ou alega ter a commodity
+            for (let candId of others) {
+              const claim = gameState.botCommodityClaims && gameState.botCommodityClaims[candId];
+              const candHand = gameState.hands[candId] || [];
+              const hasComm = (candId === 0 && claim && claim.claim) || (candId !== 0 && candHand.some(c => c.type === 'WILD' || c.name.includes(reqKey)));
+              if (hasComm) {
+                chosenSupplier = candId;
+                break;
+              }
+            }
+          }
+
+          // Se escalou um fornecedor externo idôneo, garante sua presença no comitê
+          if (chosenSupplier !== null && chosenSupplier !== gameState.chairId) {
+            pool.push(chosenSupplier);
+            others = others.filter(id => id !== chosenSupplier);
+          }
+
+          // 4. Preenche as vagas restantes respeitando pares em conflito mútuo (nunca inclui os dois)
+          for (let candId of others) {
+            if (pool.length >= needed) break;
+            let conflictsWithPool = false;
+            if (gameState.conflictPairs) {
+              for (let pair of gameState.conflictPairs) {
+                if (pair.includes(candId)) {
+                  const rival = pair.find(x => x !== candId);
+                  if (pool.includes(rival)) {
+                    conflictsWithPool = true;
+                    break;
+                  }
+                }
+              }
+            }
+            if (!conflictsWithPool) {
+              pool.push(candId);
+            }
+          }
+
+          // Se faltar vagas para a meta regimental, preenche com os de menor suspeita
+          if (pool.length < needed) {
+            for (let candId of others) {
+              if (pool.length >= needed) break;
+              if (!pool.includes(candId)) pool.push(candId);
+            }
+          }
+
+          gameState.proposedCommittee = pool;
+          gameState.designatedSupplier = chosenSupplier !== null ? chosenSupplier : pool[0];
+        } else {
+          // Estagiário Presidente: escolha caótica/aleatória
+          others.sort(() => Math.random() - 0.5);
+          pool = pool.concat(others.slice(0, needed - 1));
+          gameState.proposedCommittee = pool;
+          gameState.designatedSupplier = pool[0];
+        }
       }
     }
 
@@ -1944,26 +2009,57 @@ function createShuffledDeck() {
           const inComm = gameState.proposedCommittee.includes(i);
           const othersInComm = gameState.proposedCommittee.filter(id => id !== i);
 
-          // 1. Veto por desconfiança no Chairman proponente
-          if (chairId !== i && chairSus >= 0.55) {
+          // 1. VETO SUMÁRIO: Alguém no comitê está publicamente desmascarado
+          const accusedInComm = gameState.proposedCommittee.find(id => gameState.publicAccused && gameState.publicAccused.includes(id));
+          if (accusedInComm !== undefined) {
+            botVote = false;
+            reason = `Veto: ${characters[accusedInComm].name} foi comprovadamente desmascarado como traidor!`;
+          }
+          // 2. VETO DE GOVERNANÇA: Comitê contém dois membros em conflito mútuo
+          else if (gameState.conflictPairs && gameState.conflictPairs.some(pair => pair.every(id => gameState.proposedCommittee.includes(id)))) {
+            botVote = false;
+            reason = `Veto: comissão contém operadores em conflito direto de insumo!`;
+          }
+          // 3. VETO DE RIVAL: Oponente de conflito de 'i' foi convocado sem ele
+          else if (gameState.conflictPairs && gameState.conflictPairs.some(pair => pair.includes(i) && gameState.proposedCommittee.includes(pair.find(x => x !== i)) && !inComm)) {
+            botVote = false;
+            reason = `Veto: meu oponente de conflito foi convocado sem minha fiscalização!`;
+          }
+          // 4. VETO TÉCNICO: Exigência contratual de commodity sem fornecedor qualificado
+          else if (contract.req_commodity && !gameState.proposedCommittee.some(id => {
+            const p = gameState.promises[id];
+            const claim = gameState.botCommodityClaims && gameState.botCommodityClaims[id];
+            return (p && p.hasCommodity) || (claim && claim.claim);
+          })) {
+            botVote = false;
+            reason = `Veto: nenhum integrante assegura a cota de ${contract.req_commodity}!`;
+          }
+          // 5. VETO DE PRESIDÊNCIA: Desconfiança no Chairman proponente
+          else if (chairId !== i && chairSus >= 0.56) {
             botVote = false;
             reason = `Veto: desconfiança na presidência (${Math.round(chairSus * 100)}%)`;
           }
-          // 2. Veto por integrante de alta suspeita no comitê
+          // 6. VETO POR SUSPEITA INDIVIDUAL: Integrante com suspeita >= 58%
           else {
-            const highSusMember = othersInComm.find(id => (suspicionsOfI[id] || 0.40) >= 0.60);
-            if (highSusMember) {
+            const highSusMember = othersInComm.find(id => (suspicionsOfI[id] || 0.40) >= 0.58);
+            if (highSusMember !== undefined) {
               botVote = false;
               const susVal = Math.round((suspicionsOfI[highSusMember] || 0.40) * 100);
               reason = `Veto: suspeita em ${characters[highSusMember].name} (${susVal}%)`;
             }
-            // 3. Se o próprio Banqueiro está de fora no banco, calcula a média de risco do comitê
+            // 7. VETO DO BANCO: De fora na reserva, risco médio da mesa >= 49%
             else if (!inComm) {
               const avgSus = gameState.proposedCommittee.reduce((acc, id) => acc + (suspicionsOfI[id] || 0.40), 0) / gameState.proposedCommittee.length;
-              if (avgSus >= 0.48) {
+              if (avgSus >= 0.49) {
                 botVote = false;
                 reason = `Veto: risco médio da mesa elevado (${Math.round(avgSus * 100)}%)`;
+              } else {
+                botVote = true;
+                reason = "Comitê equilibrado e auditado";
               }
+            } else {
+              botVote = true;
+              reason = "Comissão idônea e alinhada ao plano";
             }
           }
         } else {
@@ -1974,7 +2070,7 @@ function createShuffledDeck() {
             botVote = true;
             reason = "Interesse em integrar a comissão";
           } else {
-            // De fora, tenta sabotar a aprovação de comitês limpos de banqueiros (~65% veto)
+            // De fora, obstrui comitês limpos de banqueiros (~65% veto)
             const allBankers = gameState.proposedCommittee.every(id => gameState.roles[id] === 'Banqueiro');
             if (allBankers && Math.random() < 0.65) {
               botVote = false;
@@ -2078,6 +2174,11 @@ function createShuffledDeck() {
       const contract = contractsList[gameState.roundNum - 1];
       const inComm = gameState.proposedCommittee.includes(0);
       const requiredCost = contract.cost || 1;
+      const effectiveTarget = getEffectiveTarget(contract);
+      let needCommodity = contract.req_commodity !== null;
+      if (gameState.roundDirective && gameState.roundDirective.id === "SWAP_DE_COMMODITY") {
+        needCommodity = false;
+      }
 
       if (inComm && gameState.humanSelectedCards.length !== requiredCost) {
         alert(`Você precisa selecionar exatamente ${requiredCost} carta(s) para depositar.`);
@@ -2133,27 +2234,62 @@ function createShuffledDeck() {
                 allVaultCards.push({ card: c, ownerId: id });
               }
             } else {
+              // BANQUEIRO COOPERATIVO (FIM DO OVERKILL & PRESERVAÇÃO DE ATIVOS NOBRES):
               const reqKey = contract.req_commodity ? contract.req_commodity.split(' ')[0] : null;
-              let reqIdx = -1;
-              if (reqKey) {
-                reqIdx = pHand.findIndex(c => c.type === 'WILD' || c.name.includes(reqKey));
+              const isDesignatedSupplier = (gameState.designatedSupplier === id) || 
+                (reqKey && !gameState.proposedCommittee.some(otherId => otherId !== id && gameState.designatedSupplier === otherId && (gameState.hands[otherId]||[]).some(c => c.type === 'WILD' || c.name.includes(reqKey))));
+
+              // 1. Se for o fornecedor e o contrato exige commodity, entrega a commodity requerida
+              let commodityDeliveredByMe = false;
+              if (reqKey && isDesignatedSupplier) {
+                let commIdx = pHand.findIndex(c => c.name.includes(reqKey));
+                if (commIdx === -1) commIdx = pHand.findIndex(c => c.type === 'WILD');
+                if (commIdx > -1) {
+                  const c = pHand.splice(commIdx, 1)[0];
+                  cardsDeposited.push(c);
+                  allVaultCards.push({ card: c, ownerId: id });
+                  commodityDeliveredByMe = true;
+                }
               }
-              if (reqIdx > -1) {
-                const c = pHand.splice(reqIdx, 1)[0];
+
+              // 2. Preenche cartas restantes para o custo (sem queimar Safira e Titânio à toa!)
+              while (cardsDeposited.length < requiredCost && pHand.length > 0) {
+                const currentAccumulated = totalPoints + cardsDeposited.reduce((a,c) => a + c.base, 0) + coinsSpent;
+                const deficit = effectiveTarget - currentAccumulated;
+
+                // Ordena priorizando economizar Safiras (SF) e Titânios (TI) antes do Tier 6
+                pHand.sort((a, b) => {
+                  let costA = a.base;
+                  let costB = b.base;
+                  if (gameState.roundNum < 6) {
+                    if (a.type === 'SF' || a.base >= 4) costA += 15;
+                    else if (a.type === 'TI' || a.base === 3) costA += 8;
+
+                    if (b.type === 'SF' || b.base >= 4) costB += 15;
+                    else if (b.type === 'TI' || b.base === 3) costB += 8;
+                  }
+                  return costA - costB; // Menor custo primeiro (poupa cartas nobres)
+                });
+
+                let pickIdx = 0;
+                // Se a meta exige pontos substanciais e estamos no mid-game, busca a carta adequada
+                if (deficit > 3 && gameState.roundNum >= 3) {
+                  const goodIdx = pHand.findIndex(c => c.base >= Math.min(3, deficit));
+                  if (goodIdx > -1) pickIdx = goodIdx;
+                }
+
+                const c = pHand.splice(pickIdx, 1)[0];
                 cardsDeposited.push(c);
                 allVaultCards.push({ card: c, ownerId: id });
-              } else {
-                pHand.sort((a,b) => b.base - a.base);
-                const c = pHand.shift();
-                cardsDeposited.push(c);
-                allVaultCards.push({ card: c, ownerId: id });
+              }
+
+              // 3. Queima de Ariary (Tokens): estritamente se necessário para bater a meta
+              const myCardPts = cardsDeposited.reduce((a,c) => a + c.base, 0);
+              if (totalPoints + myCardPts < effectiveTarget && gameState.tokens[id] > 0 && coinsSpent === 0) {
+                coinsSpent = 1;
+                gameState.tokens[id] -= 1;
               }
             }
-          }
-
-          if (!willSabotage && gameState.promises[id] && gameState.promises[id].ariaryBurn > 0 && gameState.tokens[id] > 0 && coinsSpent === 0) {
-            coinsSpent = 1;
-            gameState.tokens[id] -= 1;
           }
         }
 
@@ -2191,13 +2327,6 @@ function createShuffledDeck() {
 
       const requiredCount = contract.req_count || 1;
       let hasRequiredCommodity = totalCommoditiesDelivered >= requiredCount;
-
-      let effectiveTarget = getEffectiveTarget(contract);
-      let needCommodity = contract.req_commodity !== null;
-
-      if (gameState.roundDirective && gameState.roundDirective.id === "SWAP_DE_COMMODITY") {
-        needCommodity = false;
-      }
 
       // Seguro Contra Sinistro: Anula o primeiro Ativo Tóxico encontrado
       if (gameState.roundDirective && gameState.roundDirective.id === "SEGURO_CONTRA_SINISTRO") {
@@ -2255,62 +2384,175 @@ function createShuffledDeck() {
         if (gameState.roundNum === 4) gameState.prevTier4Failed = true;
       }
 
-      // Atualização Dinâmica das Suspeitas dos Banqueiros (Aprendizado Bayesiano de Mesa)
+      // =========================================================================
+      // DEDUÇÃO SOCIAL AVANÇADA (FRENTE 2): ISOLAMENTO DE CULPA & VINDICAÇÃO
+      // =========================================================================
       const hasToxicInVault = allVaultCards.some(item => item.card.type === 'TOXIC');
       const hasSegregated = gameState.roundDirective && gameState.roundDirective.id === "CONTABILIDADE_SEGREGADA";
+      const failedCommodity = needCommodity && !hasRequiredCommodity;
+      const failedPoints = totalPoints < effectiveTarget;
+      let deductionReport = null;
 
-      for (let b = 1; b <= 4; b++) {
-        if (gameState.roles[b] === 'Banqueiro') {
-          if (!gameState.botSuspicions[b]) gameState.botSuspicions[b] = {};
-
-          if (!isSuccess) {
-            // Se falhou: membros do comitê recebem aumento substancial de suspeita
-            gameState.proposedCommittee.forEach(mId => {
-              if (mId !== b) {
-                const cur = gameState.botSuspicions[b][mId] || 0.40;
-                const penalty = hasToxicInVault ? 0.35 : 0.20;
-                gameState.botSuspicions[b][mId] = Math.min(0.95, cur + penalty);
-              }
-            });
-            // Penalidade leve para o Chairman que montou o comitê fracassado
-            if (gameState.chairId !== b && !gameState.proposedCommittee.includes(gameState.chairId)) {
-              const curChair = gameState.botSuspicions[b][gameState.chairId] || 0.40;
-              gameState.botSuspicions[b][gameState.chairId] = Math.min(0.85, curChair + 0.15);
+      if (!isSuccess) {
+        if (failedCommodity) {
+          // Identifica exatamente quem prometeu entregar o insumo
+          const supIds = gameState.proposedCommittee.filter(id => gameState.promises[id] && gameState.promises[id].hasCommodity);
+          
+          if (supIds.length === 1) {
+            const culprit = supIds[0];
+            if (!gameState.publicAccused.includes(culprit)) {
+              gameState.publicAccused.push(culprit);
             }
-          } else {
-            // Se teve sucesso: membros do comitê ganham confiança
+            // Fixa suspeita em 100% sobre o sabotador flagrado
+            for (let b = 1; b <= 4; b++) {
+              if (gameState.roles[b] === 'Banqueiro' && b !== culprit) {
+                gameState.botSuspicions[b][culprit] = 1.00;
+              }
+            }
+            updatePlayerSuspicion(culprit, 100);
+
+            // ISENÇÃO: Membros que prometeram apenas pontos são inocentados da quebra de insumo!
             gameState.proposedCommittee.forEach(mId => {
-              if (mId !== b) {
-                const cur = gameState.botSuspicions[b][mId] || 0.40;
-                gameState.botSuspicions[b][mId] = Math.max(0.10, cur - 0.15);
+              if (mId !== culprit) {
+                for (let b = 1; b <= 4; b++) {
+                  if (gameState.roles[b] === 'Banqueiro' && b !== mId) {
+                    const cur = gameState.botSuspicions[b][mId] || 0.40;
+                    if (!hasToxicInVault) {
+                      gameState.botSuspicions[b][mId] = Math.max(0.15, cur - 0.05);
+                    }
+                  }
+                }
               }
             });
+
+            deductionReport = {
+              type: 'culprit_isolated',
+              culprit: culprit,
+              commName: contract.req_commodity,
+              text: `🚨 FLAGRANTE DE AUDITORIA: ${characters[culprit].name} foi o único membro do comitê que prometeu a entrega de ${contract.req_commodity}, que não apareceu na urna! Culpabilidade 100% isolada e operador banido de futuros comitês pelo conselho. Os demais integrantes foram isentados de culpa por insumo!`
+            };
+          } else if (supIds.length >= 2) {
+            // Par em conflito direto de insumo
+            const pair = [supIds[0], supIds[1]];
+            gameState.conflictPairs.push(pair);
+
+            supIds.forEach(id => {
+              for (let b = 1; b <= 4; b++) {
+                if (gameState.roles[b] === 'Banqueiro' && b !== id) {
+                  const cur = gameState.botSuspicions[b][id] || 0.40;
+                  gameState.botSuspicions[b][id] = Math.min(0.85, cur + 0.35);
+                }
+              }
+              updatePlayerSuspicion(id, Math.min(85, (gameState.humanSuspicions[id] || 40) + 30));
+            });
+
+            deductionReport = {
+              type: 'conflict_declared',
+              pair: pair,
+              commName: contract.req_commodity,
+              text: `⚖️ CONFLITO INSTITUCIONAL: ${characters[supIds[0]].name} e ${characters[supIds[1]].name} prometeram ${contract.req_commodity}, mas a cota oficial não foi atingida! O conselho sabe que pelo menos um deles é um Estagiário Infiltrado.`
+            };
+          }
+        } else if (hasToxicInVault) {
+          // Ativo Tóxico na urna
+          gameState.proposedCommittee.forEach(mId => {
+            for (let b = 1; b <= 4; b++) {
+              if (gameState.roles[b] === 'Banqueiro' && b !== mId) {
+                const cur = gameState.botSuspicions[b][mId] || 0.40;
+                gameState.botSuspicions[b][mId] = Math.min(0.95, cur + 0.30);
+              }
+            }
+            updatePlayerSuspicion(mId, Math.min(90, (gameState.humanSuspicions[mId] || 40) + 25));
+          });
+          deductionReport = {
+            type: 'toxic_found',
+            text: `☣️ CONTAMINAÇÃO TÓXICA: Um Ativo Tóxico (-4) foi detonado no cofre! A suspeita sobre todos os operadores da comissão foi substancialmente elevada.`
+          };
+        } else if (failedPoints) {
+          // Falha por déficit de pontos: penaliza quem descumpriu a promessa
+          auditLog.forEach(row => {
+            if (!row.fulfilled) {
+              for (let b = 1; b <= 4; b++) {
+                if (gameState.roles[b] === 'Banqueiro' && b !== row.playerId) {
+                  const cur = gameState.botSuspicions[b][row.playerId] || 0.40;
+                  gameState.botSuspicions[b][row.playerId] = Math.min(0.85, cur + 0.25);
+                }
+              }
+              updatePlayerSuspicion(row.playerId, Math.min(85, (gameState.humanSuspicions[row.playerId] || 40) + 20));
+            }
+          });
+          deductionReport = {
+            type: 'deficit_points',
+            text: `📉 DÉFICIT DE LIQUIDEZ: A operação não atingiu o valor alvo por falta de pontos. Integrantes que entregaram menos do que prometeram estão sob escrutínio.`
+          };
+        }
+      } else {
+        // OPERAÇÃO APROVADA COM SUCESSO!
+        // Reduz suspeita de todos os integrantes
+        gameState.proposedCommittee.forEach(mId => {
+          for (let b = 1; b <= 4; b++) {
+            if (gameState.roles[b] === 'Banqueiro' && b !== mId) {
+              const cur = gameState.botSuspicions[b][mId] || 0.40;
+              gameState.botSuspicions[b][mId] = Math.max(0.10, cur - 0.15);
+            }
+          }
+          updatePlayerSuspicion(mId, Math.max(15, (gameState.humanSuspicions[mId] || 40) - 15));
+        });
+
+        // CHECAGEM DE VINDICAÇÃO:
+        // Se um membro em conflito foi escalado sem seu rival e o insumo veio:
+        if (needCommodity && hasRequiredCommodity && gameState.conflictPairs && gameState.conflictPairs.length > 0) {
+          let vindicatedMId = null;
+          let exposedRival = null;
+
+          for (let i = gameState.conflictPairs.length - 1; i >= 0; i--) {
+            const pair = gameState.conflictPairs[i];
+            const inM = gameState.proposedCommittee.find(id => pair.includes(id));
+            const otherM = pair.find(id => id !== inM);
+
+            if (inM !== undefined && !gameState.proposedCommittee.includes(otherM)) {
+              vindicatedMId = inM;
+              exposedRival = otherM;
+              gameState.conflictPairs.splice(i, 1);
+              if (!gameState.publicAccused.includes(exposedRival)) {
+                gameState.publicAccused.push(exposedRival);
+              }
+              for (let b = 1; b <= 4; b++) {
+                if (gameState.roles[b] === 'Banqueiro') {
+                  gameState.botSuspicions[b][exposedRival] = 1.00;
+                  gameState.botSuspicions[b][vindicatedMId] = 0.10;
+                }
+              }
+              updatePlayerSuspicion(exposedRival, 100);
+              updatePlayerSuspicion(vindicatedMId, 10);
+              break;
+            }
           }
 
-          // Se a contabilidade segregada revelou culpados ou a auditoria CVM revelou:
-          if (hasSegregated) {
-            auditLog.forEach(row => {
-              if (!row.fulfilled && row.playerId !== b) {
-                gameState.botSuspicions[b][row.playerId] = 1.00; // Culpado comprovado!
-              }
-            });
+          if (vindicatedMId !== null) {
+            deductionReport = {
+              type: 'vindication',
+              hero: vindicatedMId,
+              rival: exposedRival,
+              text: `🌟 VINDICAÇÃO COMPROVADA: ${characters[vindicatedMId].name} integrou o comitê e assegurou a entrega do insumo com sucesso! Seu rival anterior (${characters[exposedRival].name}) foi definitivamente desmascarado como sabotador e banido pelo conselho!`
+            };
           }
         }
       }
 
-      // Atualiza também humanSuspicions sugeridas de forma sutil se houve sabotagem
-      if (!isSuccess) {
-        gameState.proposedCommittee.forEach(mId => {
-          if (mId !== 0) {
-            const curH = gameState.humanSuspicions[mId] || 40;
-            updatePlayerSuspicion(mId, Math.min(90, curH + (hasToxicInVault ? 25 : 15)));
-          }
-        });
-      } else {
-        gameState.proposedCommittee.forEach(mId => {
-          if (mId !== 0) {
-            const curH = gameState.humanSuspicions[mId] || 40;
-            updatePlayerSuspicion(mId, Math.max(15, curH - 10));
+      // Se a contabilidade segregada revelou culpados nominais:
+      if (hasSegregated) {
+        auditLog.forEach(row => {
+          if (!row.fulfilled) {
+            for (let b = 1; b <= 4; b++) {
+              if (gameState.roles[b] === 'Banqueiro' && b !== row.playerId) {
+                gameState.botSuspicions[b][row.playerId] = 1.00;
+              }
+            }
+            if (!gameState.publicAccused.includes(row.playerId)) {
+              gameState.publicAccused.push(row.playerId);
+            }
+            updatePlayerSuspicion(row.playerId, 100);
           }
         });
       }
@@ -2327,7 +2569,8 @@ function createShuffledDeck() {
         anonymousVaultCards: anonymousVaultCards,
         hasSegregatedAudit: hasSegregated,
         totalCoinsSpent: totalCoinsSpent,
-        meritAwards: meritAwards
+        meritAwards: meritAwards,
+        deductionReport: deductionReport
       };
 
       gameState.stage = 'REVEAL';
@@ -2487,8 +2730,14 @@ function createShuffledDeck() {
 
         let badgeStatus = '';
         if (isChair) badgeStatus += '<span class="text-[9px] bg-[#fde047] text-[#78350f] px-2 py-0.5 rounded-full border border-[#b45309] font-cartoon font-bold">CHAIRMAN</span> ';
-        if (inComm) badgeStatus += '<span class="text-[9px] bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full border border-[#15803d] font-cartoon font-bold">NO COMITÊ</span>';
-        else badgeStatus += '<span class="text-[9px] bg-slate-100 text-[#475569] px-2 py-0.5 rounded-full border border-slate-300 font-cartoon font-bold">NO BANCO</span>';
+        if (inComm) badgeStatus += '<span class="text-[9px] bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full border border-[#15803d] font-cartoon font-bold">NO COMITÊ</span> ';
+        else badgeStatus += '<span class="text-[9px] bg-slate-100 text-[#475569] px-2 py-0.5 rounded-full border border-slate-300 font-cartoon font-bold">NO BANCO</span> ';
+        
+        if (gameState.publicAccused && gameState.publicAccused.includes(char.id)) {
+          badgeStatus += '<span class="text-[9px] bg-rose-200 text-rose-950 px-2 py-0.5 rounded-full border border-rose-600 font-cartoon font-bold animate-pulse">🚨 CULPADO</span> ';
+        } else if (gameState.conflictPairs && gameState.conflictPairs.some(p => p.includes(char.id))) {
+          badgeStatus += '<span class="text-[9px] bg-amber-200 text-amber-950 px-2 py-0.5 rounded-full border border-amber-600 font-cartoon font-bold">⚖️ EM CONFLITO</span> ';
+        }
 
         const cardRing = isSelectedForDelib 
           ? 'ring-4 ring-[#e29547] bg-[#fefce8] border-[#b45309] shadow-[0_8px_0_#b45309]' 
@@ -3363,6 +3612,32 @@ function createShuffledDeck() {
               </div>
               <div>${outcomeStamp}</div>
             </div>
+
+            <!-- Parecer Oficial de Governança & Dedução Social da Mesa -->
+            ${rev.deductionReport ? `
+              <div class="p-4 rounded-2xl border-2 ${
+                rev.deductionReport.type === 'culprit_isolated' || rev.deductionReport.type === 'toxic_found' 
+                  ? 'bg-rose-50 border-rose-500 text-rose-950 shadow-[0_4px_0_#dc2626]' 
+                  : rev.deductionReport.type === 'conflict_declared'
+                    ? 'bg-amber-50 border-amber-500 text-amber-950 shadow-[0_4px_0_#d97706]'
+                    : 'bg-emerald-50 border-emerald-500 text-emerald-950 shadow-[0_4px_0_#059669]'
+              } space-y-1.5 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-cartoon font-bold text-xs uppercase tracking-wide">
+                    ${rev.deductionReport.type === 'culprit_isolated' ? '🚨 AUDITORIA DE GOVERNANÇA: CULPABILIDADE ISOLADA' :
+                      rev.deductionReport.type === 'conflict_declared' ? '⚖️ AUDITORIA DE GOVERNANÇA: CONFLITO INSTITUCIONAL' :
+                      rev.deductionReport.type === 'vindication' ? '🌟 AUDITORIA DE GOVERNANÇA: VINDICAÇÃO COMPROVADA' :
+                      '📋 PARECER TÉCNICO DE AUDITORIA'}
+                  </span>
+                  <span class="text-[10px] font-cartoon font-bold bg-white/80 px-2 py-0.5 rounded-full border border-black/10">
+                    Inteligência Coletiva v14
+                  </span>
+                </div>
+                <p class="text-xs leading-relaxed font-medium">
+                  ${rev.deductionReport.text}
+                </p>
+              </div>
+            ` : ''}
 
             <!-- Notificações Especiais de Auditoria CVM e Mérito -->
             ${gameState.revealedCvmCard ? `

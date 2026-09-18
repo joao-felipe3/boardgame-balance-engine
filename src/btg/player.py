@@ -99,18 +99,19 @@ class PlayerAI:
         tokens_to_offer = self.interest_tokens if round_num >= 3 else min(self.interest_tokens, 1)
         best_total_val = best_base_val + tokens_to_offer
 
-        is_dry = (best_total_val < expected_quota) and (round_num >= 2) and (not has_req_real)
+        # Banqueiros conscientes não se omitem da governança a menos que a liquidez seja crítica (0 a 1 pt sem tokens)
+        is_dry = (len(eligible_cards) < cost) or (best_total_val <= 1 and self.interest_tokens == 0 and round_num >= 2 and not has_req_real)
 
         if self.role == Role.BANKER:
             if self.profile == BankerProfile.CONSERVATIVE:
-                # Conservador: se liquidez estiver no limite, prefere banco para acumular rendimento
-                is_dry = (best_total_val <= expected_quota) and (round_num >= 2) and (not has_req_real)
+                # Conservador: se mão tiver valor muito baixo (<= 2) e não tiver insumo na R2+, prefere recompor
+                is_dry = (best_total_val <= 2 and self.interest_tokens == 0) and (round_num >= 2) and (not has_req_real)
             elif self.profile == BankerProfile.PRAGMATIC:
-                # Pragmático: topa ir para o comitê mesmo com liquidez justa
-                is_dry = (best_total_val < expected_quota - 1) and (round_num >= 2) and (not has_req_real)
+                # Pragmático: topa ir para o comitê se puder pagar o custo
+                is_dry = (len(eligible_cards) < cost) or (best_total_val <= 1 and self.interest_tokens == 0 and not has_req_real)
             elif self.profile == BankerProfile.STRATEGIST:
-                # Estrategista: se já jogou 2 rodadas seguidas, prefere banco para girar a carteira
-                is_dry = is_dry or (self.consecutive_rounds >= 2 and round_num <= 4)
+                # Estrategista: se já jogou 2 rodadas seguidas e a mão estiver fraca, prefere banco para girar
+                is_dry = (self.consecutive_rounds >= 2 and best_total_val <= 2 and not has_req_real)
 
             top_card_names = [f"{c.card_type.name.split(' ')[0]}({c.base_value}pts)" for c in eligible_cards[:cost]]
             offered_str = " + ".join(top_card_names) if top_card_names else "Liquidez Baixa"
@@ -152,47 +153,97 @@ class PlayerAI:
                 should_bench = is_dry and round_num <= 2
                 return PlayerDeclaration(self.id, claims, max(best_total_val, int(expected_quota)), req_v, tokens_to_offer, prefers_bench=should_bench, offered_desc=offered_str)
 
-    def vote_on_proposal(self, proposer: int, committee: List[int], contract: ContractSpec, round_num: int) -> bool:
-        """Votação de governança corporativa diferenciada por perfil."""
+    def vote_on_proposal(
+        self,
+        proposer: int,
+        committee: List[int],
+        contract: ContractSpec,
+        round_num: int,
+        conflict_pairs: Optional[List[set]] = None,
+        consecutive_vetoes: int = 0,
+        declarations: Optional[Dict[int, PlayerDeclaration]] = None
+    ) -> bool:
+        """Votação de governança corporativa diferenciada por perfil com dedução social humana."""
         if self.role == Role.BANKER:
             # 1. Rejeição imediata se o propositor é um traidor já comprovado
-            if proposer in self.known_traitors:
+            if proposer in self.known_traitors or (proposer != self.id and self.suspicions[proposer] >= 0.85):
                 return False
 
-            if self.profile == BankerProfile.CONSERVATIVE:
-                prop_threshold = 0.45
-                mem_threshold = 0.60
-                comm_with_self_limit = 0.52
-                avg_comm_limit = 0.45
-            elif self.profile == BankerProfile.PRAGMATIC:
-                prop_threshold = 0.55
-                mem_threshold = 0.75
-                comm_with_self_limit = 0.68
-                avg_comm_limit = 0.55
-            elif self.profile == BankerProfile.STRATEGIST:
-                prop_threshold = 0.50
-                mem_threshold = 0.68
-                comm_with_self_limit = 0.58
-                avg_comm_limit = 0.48
-            else:  # BALANCED ou fallback
-                prop_threshold = 0.50
-                mem_threshold = 0.70
-                comm_with_self_limit = 0.60
-                avg_comm_limit = 0.50
-
-            if proposer != self.id and self.suspicions[proposer] >= prop_threshold:
-                return False
-
+            # 2. Rejeição se a proposta contém alguém já conhecido pessoalmente como traidor
             for p in committee:
-                if p in self.known_traitors or self.suspicions[p] >= mem_threshold:
+                if p in self.known_traitors or (p != self.id and self.suspicions[p] >= 0.85):
                     return False
+
+            # 3. Princípio de Conflito da Mesa: Nunca aprovar comitê que reúne 2 membros de um mesmo par de conflito
+            if conflict_pairs:
+                for cp in conflict_pairs:
+                    if sum(1 for pid in committee if pid in cp) > 1:
+                        return False
+
+            # 4. Consciência de Veto de Emergência (3ª tentativa antes de comitê forçado):
+            # Na mesa real, na 3ª tentativa os banqueiros EVITAM a intervenção regulatória
+            # do Banco Central aprovando comitês razoáveis que não contenham traidores comprovados.
+            if consecutive_vetoes >= 2:
+                return True
+
+            # 5. Avaliação de Idoneidade e Núcleo de Confiança:
             if self.id in committee:
                 others = [p for p in committee if p != self.id]
-                max_sus = max([self.suspicions[p] for p in others], default=0.0)
-                return max_sus < comm_with_self_limit
+                avg_sus = sum(self.suspicions[p] for p in others) / len(others) if others else 0.0
             else:
                 avg_sus = sum(self.suspicions[p] for p in committee) / len(committee)
-                return avg_sus < avg_comm_limit
+
+            is_trusted_core = (avg_sus <= 0.40 and self.suspicions[proposer] <= 0.48)
+
+            # 6. Rejeição Técnica de Inviabilidade:
+            # Não veta por insumo ou pontuação se for o núcleo de confiança ou se já houve 1 veto prévio
+            if not is_trusted_core and consecutive_vetoes == 0:
+                if contract.req_commodity is not None and declarations:
+                    suppliers_in_comm = [pid for pid in committee if declarations[pid].claims_req]
+                    if len(suppliers_in_comm) < contract.req_commodity_count:
+                        return False
+
+                if declarations:
+                    total_declared = sum(declarations[pid].claimed_value for pid in committee)
+                    if total_declared < contract.target_value - 3:
+                        return False
+
+            # Limiares de governança prudentes calibrados com dedução humana:
+            if self.profile == BankerProfile.CONSERVATIVE:
+                prop_limit = 0.55
+                comm_with_self_limit = 0.48
+                avg_comm_limit = 0.45
+            elif self.profile == BankerProfile.PRAGMATIC:
+                prop_limit = 0.65
+                comm_with_self_limit = 0.55
+                avg_comm_limit = 0.52
+            elif self.profile == BankerProfile.STRATEGIST:
+                prop_limit = 0.60
+                comm_with_self_limit = 0.52
+                avg_comm_limit = 0.48
+            else:  # BALANCED ou fallback
+                prop_limit = 0.60
+                comm_with_self_limit = 0.52
+                avg_comm_limit = 0.48
+
+            if proposer != self.id and self.suspicions[proposer] >= prop_limit:
+                return False
+
+            # Nenhum membro individual com suspeita quase comprovada (>= 0.75) pode ser aprovado
+            for p in committee:
+                if p != self.id and self.suspicions[p] >= 0.75:
+                    return False
+
+            # Se o propositor é uma incógnita/suspeito (>= 0.50), ele não pode trazer outro operador suspeito (>= 0.50)
+            if proposer != self.id and self.suspicions[proposer] >= 0.50:
+                suspect_in_comm = sum(1 for p in committee if p != self.id and self.suspicions[p] >= 0.50)
+                if suspect_in_comm >= 2:
+                    return False
+
+            if self.id in committee:
+                return avg_sus <= comm_with_self_limit
+            else:
+                return avg_sus <= avg_comm_limit
         else:
             if self.profile == InternProfile.A_AGGRESSIVE:
                 return (self.id in committee) or (self.rng.random() < 0.30)
@@ -226,7 +277,7 @@ class PlayerAI:
         quota_needed: float,
         is_match_point: bool = False
     ) -> Tuple[List[ResourceCard], int, int]:
-        """Aporte leal e otimizado de recursos."""
+        """Aporte leal e otimizado com Gestão Cooperativa de Carteira (sem overkill)."""
         cost = contract.cost_per_player
         pos_cards = [c for c in self.hand if c.card_type != CardType.TOXIC]
         if not pos_cards:
@@ -243,36 +294,52 @@ class PlayerAI:
             if req_combos:
                 valid_combos = req_combos
 
-        if is_match_point or contract.tier >= 6 or contract.committee_size >= 4:
+        # Nos Tiers 6 e 7 (onde o custo é de 2 cartas e meta pesada), joga o melhor combo com tokens necessários
+        if contract.tier >= 6:
             best_combo = max(valid_combos, key=lambda cb: sum(c.base_value for c in cb))
-            best_tokens = self.interest_tokens
+            needed_tok = max(0, int(np.ceil(quota_needed - sum(c.base_value for c in best_combo))))
+            best_tokens = min(self.interest_tokens, needed_tok if not is_match_point else self.interest_tokens)
             best_val = sum(c.base_value for c in best_combo) + best_tokens
             return list(best_combo), best_tokens, best_val
 
+        # Nos Tiers 1 a 5: Gestão Cooperativa e Poupança Ativa de Recursos Nobres
         best_combo = None
         best_tokens = 0
         best_val = -999
-        best_score = (999, 999, 999, 999)
+        best_score = (9999, 9999, 9999, 9999)
+
+        # Margem de segurança prudente contra sabotador (+1 a +2 se match-point; caso contrário mira na cota necessária)
+        safety_margin = 2 if is_match_point else (1 if round_num >= 3 else 0)
+        target_for_p = max(cost, quota_needed + safety_margin)
 
         for cb in valid_combos:
             base_v = sum(c.base_value for c in cb)
-            needed_tokens = max(0, int(np.ceil(quota_needed - base_v)))
+            needed_tokens = max(0, int(np.ceil(target_for_p - base_v)))
             tokens_to_use = min(self.interest_tokens, needed_tokens)
 
             # Estrategista poupa tokens em rodadas iniciais se cartas cobrirem ou ficarem próximas
-            if self.role == Role.BANKER and self.profile == BankerProfile.STRATEGIST and round_num <= 3 and not is_match_point and contract.tier < 6:
-                if base_v >= quota_needed - 1 and tokens_to_use > 1:
-                    tokens_to_use = 1
+            if self.role == Role.BANKER and self.profile == BankerProfile.STRATEGIST and round_num <= 3 and not is_match_point:
+                if base_v >= quota_needed and tokens_to_use > 0:
+                    tokens_to_use = 0
 
             total_v = base_v + tokens_to_use
 
+            # Penalidade para preservar Safiras e Wilds para o Tier 6/7
             has_safira = any(c.card_type in (CardType.SF, CardType.WILD) for c in cb)
-            penalty = 10 if (has_safira and round_num <= 3 and contract.req_commodity != CardType.SF) else 0
+            safira_penalty = 15 if (has_safira and contract.req_commodity != CardType.SF and contract.tier < 6) else 0
+
+            # Penalidade para preservar Titânio se não for o insumo exigido
+            has_titanio = any(c.card_type == CardType.TI for c in cb)
+            titanio_penalty = 8 if (has_titanio and not is_responsible_for_req and contract.req_commodity != CardType.TI and contract.tier < 5) else 0
+
+            token_penalty = tokens_to_use * 2
 
             if total_v >= quota_needed:
-                score = (0, penalty, tokens_to_use, total_v - quota_needed)
+                overkill = total_v - quota_needed
+                score = (0, safira_penalty + titanio_penalty, token_penalty, overkill)
             else:
-                score = (1, penalty, -tokens_to_use, -(total_v - quota_needed))
+                deficit = quota_needed - total_v
+                score = (1, deficit, safira_penalty + titanio_penalty, -total_v)
 
             if best_combo is None or score < best_score:
                 best_combo = cb
